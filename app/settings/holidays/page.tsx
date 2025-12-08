@@ -55,7 +55,7 @@ export default async function HolidaysPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
-      <div className="mx-auto w-full max-w-3xl space-y-8 rounded-3xl border border-white/10 bg-white/5 p-10 shadow-2xl backdrop-blur">
+      <div className="mx-auto w-full max-w-3xl space-y-8 rounded-3xl border border-white/10 bg-white/5 p-10 shadow-2xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Holiday Settings</p>
