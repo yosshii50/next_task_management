@@ -47,11 +47,14 @@ export default async function DashboardPage() {
 
   const displayName = session.user.name ?? session.user.email ?? "メンバー";
 
-  const [tasks, weeklyHoliday] = await Promise.all([
+  const [tasks, weeklyHoliday, holidays] = await Promise.all([
     prisma.task.findMany({
       where: { userId },
     }),
     prisma.weeklyHoliday.findUnique({ where: { userId } }),
+    prisma.holiday.findMany({
+      where: { userId },
+    }),
   ]);
 
   const sortedTasks = tasks.sort((a, b) => {
@@ -99,16 +102,25 @@ export default async function DashboardPage() {
 
   const todayIso = formatDateForInput(new Date());
   const calendarStart = getStartOfWeek(new Date());
+  const holidayMap = holidays.reduce<Record<string, string>>((acc, holiday) => {
+    const iso = formatDateForInput(holiday.date);
+    acc[iso] = holiday.name;
+    return acc;
+  }, {});
+
   const calendarDays = Array.from({ length: WEEKS_TO_DISPLAY * DAYS_PER_WEEK }, (_, index) => {
     const date = new Date(calendarStart);
     date.setDate(calendarStart.getDate() + index);
     const iso = formatDateForInput(date);
     const weekday = date.getDay();
+    const holidayName = holidayMap[iso];
+    const isHoliday = weeklyHolidayMap[weekday] || Boolean(holidayName);
     return {
       date: iso,
       label: `${date.getMonth() + 1}/${date.getDate()}`,
       isToday: iso === todayIso,
-      isHoliday: weeklyHolidayMap[weekday],
+      isHoliday,
+      holidayName: holidayName ?? undefined,
       tasks: tasksByDate[iso] ?? [],
     };
   });

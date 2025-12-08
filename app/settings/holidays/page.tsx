@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
+import HolidayList from "@/components/holiday-list";
 import WeeklyHolidayToggle from "@/components/weekly-holiday-toggle";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -28,9 +29,13 @@ export default async function HolidaysPage() {
     redirect("/");
   }
 
-  const weeklyHoliday = await prisma.weeklyHoliday.findUnique({
-    where: { userId },
-  });
+  const [weeklyHoliday, holidays] = await Promise.all([
+    prisma.weeklyHoliday.findUnique({ where: { userId } }),
+    prisma.holiday.findMany({
+      where: { userId },
+      orderBy: { date: "asc" },
+    }),
+  ]);
 
   const weeklyState = {
     sun: weeklyHoliday?.sunday ?? defaultWeekState.sun,
@@ -41,6 +46,12 @@ export default async function HolidaysPage() {
     fri: weeklyHoliday?.friday ?? defaultWeekState.fri,
     sat: weeklyHoliday?.saturday ?? defaultWeekState.sat,
   };
+
+  const holidayList = holidays.map((holiday) => ({
+    id: holiday.id,
+    name: holiday.name,
+    date: holiday.date.toISOString().slice(0, 10),
+  }));
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -65,6 +76,7 @@ export default async function HolidaysPage() {
             <p className="mt-2 text-sm text-white/70">カレンダーやリストUIを追加して、休日の登録や削除ができるように実装してください。</p>
           </div>
           <WeeklyHolidayToggle initialState={weeklyState} />
+          <HolidayList holidays={holidayList} />
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <h2 className="text-xl font-semibold">API 連携</h2>
             <p className="mt-2 text-sm text-white/70">Google Calendar や社内システムとの連携をここに追加できます。</p>

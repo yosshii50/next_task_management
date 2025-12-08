@@ -11,6 +11,7 @@ type CalendarDay = {
   label: string;
   isToday: boolean;
   isHoliday: boolean;
+  holidayName?: string;
   tasks: CalendarTask[];
 };
 
@@ -50,6 +51,8 @@ export default function TaskCalendar({ weeks }: TaskCalendarProps) {
                 : day.isHoliday
                 ? "bg-rose-500/10"
                 : "bg-slate-950/40";
+              const badgeText = day.isToday ? "今日" : day.holidayName ?? (day.isHoliday ? "休日" : null);
+              const badgeClass = day.isToday ? "text-emerald-300" : "text-rose-300";
               return (
                 <div
                   key={day.date}
@@ -57,8 +60,7 @@ export default function TaskCalendar({ weeks }: TaskCalendarProps) {
                 >
                   <div className="flex items-center justify-between text-xs text-white">
                     <span>{day.label}</span>
-                    {day.isToday && <span className="text-emerald-300">今日</span>}
-                    {!day.isToday && day.isHoliday && <span className="text-rose-300">休日</span>}
+                    {badgeText && <span className={badgeClass}>{badgeText}</span>}
                   </div>
                   <div className="mt-2 space-y-1">
                     {day.tasks.length === 0 ? (

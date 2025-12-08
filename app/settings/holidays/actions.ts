@@ -47,3 +47,73 @@ export async function setWeeklyHoliday(day: WeekdayKey, enabled: boolean) {
 
   revalidatePath("/settings/holidays");
 }
+
+function parseDate(input: string | null) {
+  if (!input) {
+    throw new Error("日付を入力してください。");
+  }
+
+  const date = new Date(`${input}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("日付の形式が正しくありません。");
+  }
+
+  return date;
+}
+
+export async function createHoliday(formData: FormData) {
+  const userId = await requireUserId();
+  const date = parseDate(formData.get("date")?.toString() ?? null);
+  const name = formData.get("name")?.toString().trim();
+
+  if (!name) {
+    throw new Error("名称を入力してください。");
+  }
+
+  await prisma.holiday.create({
+    data: {
+      userId,
+      date,
+      name,
+    },
+  });
+
+  revalidatePath("/settings/holidays");
+}
+
+export async function updateHoliday(formData: FormData) {
+  const userId = await requireUserId();
+  const holidayId = Number(formData.get("holidayId"));
+  const date = parseDate(formData.get("date")?.toString() ?? null);
+  const name = formData.get("name")?.toString().trim();
+
+  if (!holidayId) {
+    throw new Error("更新対象が見つかりません。");
+  }
+
+  if (!name) {
+    throw new Error("名称を入力してください。");
+  }
+
+  await prisma.holiday.updateMany({
+    where: { id: holidayId, userId },
+    data: { date, name },
+  });
+
+  revalidatePath("/settings/holidays");
+}
+
+export async function deleteHoliday(formData: FormData) {
+  const userId = await requireUserId();
+  const holidayId = Number(formData.get("holidayId"));
+
+  if (!holidayId) {
+    throw new Error("削除対象が見つかりません。");
+  }
+
+  await prisma.holiday.deleteMany({
+    where: { id: holidayId, userId },
+  });
+
+  revalidatePath("/settings/holidays");
+}
