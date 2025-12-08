@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { createTask, deleteTask, updateTask } from "@/app/dashboard/actions";
 import SignOutButton from "@/components/sign-out-button";
+import TaskCalendar from "@/components/task-calendar";
 import TaskList from "@/components/task-list";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -20,6 +21,17 @@ const formatDateForInput = (date: Date) => {
   return localDate.toISOString().slice(0, 10);
 };
 
+const getStartOfWeek = (reference: Date) => {
+  const start = new Date(reference);
+  start.setHours(0, 0, 0, 0);
+  const weekday = start.getDay();
+  start.setDate(start.getDate() - weekday);
+  return start;
+};
+
+const WEEKS_TO_DISPLAY = 4;
+const DAYS_PER_WEEK = 7;
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
@@ -35,9 +47,12 @@ export default async function DashboardPage() {
 
   const displayName = session.user.name ?? session.user.email ?? "メンバー";
 
-  const tasks = await prisma.task.findMany({
-    where: { userId },
-  });
+  const [tasks, weeklyHoliday] = await Promise.all([
+    prisma.task.findMany({
+      where: { userId },
+    }),
+    prisma.weeklyHoliday.findUnique({ where: { userId } }),
+  ]);
 
   const sortedTasks = tasks.sort((a, b) => {
     const aDue = a.dueDate;
@@ -57,6 +72,16 @@ export default async function DashboardPage() {
     return a.title.localeCompare(b.title, "ja");
   });
 
+  const weeklyHolidayMap = {
+    0: weeklyHoliday?.sunday ?? false,
+    1: weeklyHoliday?.monday ?? false,
+    2: weeklyHoliday?.tuesday ?? false,
+    3: weeklyHoliday?.wednesday ?? false,
+    4: weeklyHoliday?.thursday ?? false,
+    5: weeklyHoliday?.friday ?? false,
+    6: weeklyHoliday?.saturday ?? false,
+  } as Record<number, boolean>;
+
   const clientTasks = sortedTasks.map((task) => ({
     id: task.id,
     title: task.title,
@@ -64,6 +89,33 @@ export default async function DashboardPage() {
     status: task.status,
     dueDate: task.dueDate ? formatDateForInput(task.dueDate) : null,
   }));
+
+  const tasksByDate = clientTasks.reduce<Record<string, { id: number; title: string; status: TaskStatus }[]>>((acc, task) => {
+    if (!task.dueDate) return acc;
+    acc[task.dueDate] = acc[task.dueDate] ?? [];
+    acc[task.dueDate].push({ id: task.id, title: task.title, status: task.status });
+    return acc;
+  }, {});
+
+  const todayIso = formatDateForInput(new Date());
+  const calendarStart = getStartOfWeek(new Date());
+  const calendarDays = Array.from({ length: WEEKS_TO_DISPLAY * DAYS_PER_WEEK }, (_, index) => {
+    const date = new Date(calendarStart);
+    date.setDate(calendarStart.getDate() + index);
+    const iso = formatDateForInput(date);
+    const weekday = date.getDay();
+    return {
+      date: iso,
+      label: `${date.getMonth() + 1}/${date.getDate()}`,
+      isToday: iso === todayIso,
+      isHoliday: weeklyHolidayMap[weekday],
+      tasks: tasksByDate[iso] ?? [],
+    };
+  });
+
+  const calendarWeeks = Array.from({ length: WEEKS_TO_DISPLAY }, (_, weekIndex) =>
+    calendarDays.slice(weekIndex * DAYS_PER_WEEK, weekIndex * DAYS_PER_WEEK + DAYS_PER_WEEK)
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -80,8 +132,18 @@ export default async function DashboardPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-white/60">別のアカウントでログインしたい場合はサインアウトしてください。</p>
-          <SignOutButton />
+          <div className="flex gap-3">
+            <a
+              href="/settings"
+              className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+            >
+              設定
+            </a>
+            <SignOutButton />
+          </div>
         </div>
+
+        <TaskCalendar weeks={calendarWeeks} />
 
         <TaskList
           tasks={clientTasks}
