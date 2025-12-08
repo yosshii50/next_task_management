@@ -10,12 +10,10 @@ export default function LoginForm() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSuccess(null);
     setSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
@@ -35,9 +33,7 @@ export default function LoginForm() {
       return;
     }
 
-    router.refresh();
-    setSuccess("サインインしました。");
-    (event.target as HTMLFormElement).reset();
+    router.push("/dashboard");
   }
 
   return (
@@ -98,7 +94,6 @@ export default function LoginForm() {
           <span className="text-white/50">SAML対応</span>
         </div>
         {error && <p className="text-sm text-rose-300">{error}</p>}
-        {success && <p className="text-sm text-emerald-300">{success}</p>}
         <button
           type="submit"
           disabled={submitting}

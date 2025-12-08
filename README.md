@@ -21,7 +21,7 @@ bun dev
 
 NextAuth + Prisma によるユーザーログイン機能を利用するには、次の初期設定を行ってください。
 
-1. `.env.example` をコピーして `.env` を作成し、`NEXTAUTH_SECRET` に十分に長いランダム文字列を設定する。
+1. `.env.example` をコピーして `.env` を作成し、`NEXTAUTH_SECRET` に十分に長いランダム文字列、`NEXTAUTH_URL` に `http://localhost:3001` を設定する。
 2. データベースを初期化: `npx prisma migrate dev --name init`
 3. ユーザーを登録:
    - `npx prisma studio` を実行
@@ -42,4 +42,3 @@ NextAuth + Prisma によるユーザーログイン機能を利用するには�
 ## デプロイ
 
 Next.js アプリを最も手軽にデプロイするには、Next.js の開発元 Vercel が提供する [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) をご利用ください。詳細な手順は [デプロイガイド](https://nextjs.org/docs/app/building-your-application/deploying) を参照してください。
-
