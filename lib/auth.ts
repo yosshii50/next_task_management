@@ -36,7 +36,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error("認証に失敗しました。");
         }
 
-        return user;
+        // NextAuth expects the user id to be a string
+        return { ...user, id: user.id.toString() };
       },
     }),
   ],
