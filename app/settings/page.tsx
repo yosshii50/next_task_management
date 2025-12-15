@@ -35,6 +35,20 @@ export default async function SettingsPage() {
             <p className="mt-2 text-sm text-white/70">名前やプロフィール画像の編集をここに実装してください。</p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">PDF生成</h2>
+                <p className="mt-2 text-sm text-white/70">画像とテキストを使ってA3のレイアウトを確認できます。</p>
+              </div>
+              <a
+                href="/settings/pdf"
+                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+              >
+                開く
+              </a>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <h2 className="text-xl font-semibold">通知</h2>
             <p className="mt-2 text-sm text-white/70">メール通知やSlack連携の設定をここに追加できます。</p>
           </div>
