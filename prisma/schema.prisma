@@ -48,12 +48,15 @@ model User {
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  parentId       Int?
 
   accounts Account[]
   sessions Session[]
   tasks    Task[]
   weeklyHoliday WeeklyHoliday?
   holidays Holiday[]
+  parent   User?    @relation("UserParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children User[]   @relation("UserParent")
 }
 
 model VerificationToken {
