@@ -3,8 +3,9 @@
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-const providers = ["Google", "Microsoft", "Slack"];
+const providers = ["Google", "Discord", "X"];
 
 export default function LoginForm() {
   const router = useRouter();
@@ -42,10 +43,10 @@ export default function LoginForm() {
         <p className="text-sm uppercase tracking-[0.3em] text-white/60">Portal Login</p>
         <h2 className="text-2xl font-semibold text-white">メンバーサインイン</h2>
         <p className="text-sm text-white/60">
-          アカウントをお持ちでない方は {" "}
-          <a className="text-emerald-300 underline-offset-2 hover:underline" href="#">
+          アカウントをお持ちでない方は{" "}
+          <Link className="text-emerald-300 underline-offset-2 hover:underline" href="/signup">
             こちらから登録
-          </a>
+          </Link>
         </p>
       </div>
       <form className="space-y-4" onSubmit={handleSubmit}>
