@@ -36,6 +36,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("認証に失敗しました。");
         }
 
+        if (!user.isActive) {
+          throw new Error("このアカウントは無効化されています。管理者にお問い合わせください。");
+        }
+
         // NextAuth expects the user id to be a string
         return { ...user, id: user.id.toString() };
       },
