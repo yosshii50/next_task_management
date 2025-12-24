@@ -57,6 +57,7 @@ model User {
   holidays Holiday[]
   parent   User?    @relation("UserParent", fields: [parentId], references: [id], onDelete: SetNull)
   children User[]   @relation("UserParent")
+  activationTokens ActivationToken[]
 }
 
 model VerificationToken {
@@ -111,4 +112,16 @@ model Holiday {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+}
+
+model ActivationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
+import { issueActivationToken } from "@/lib/activation";
+import { sendParentApprovalEmail } from "@/lib/mailer";
 
 function normalizeEmail(value: unknown) {
   if (typeof value !== "string") {
@@ -16,6 +18,11 @@ function sanitizeText(value: unknown) {
   }
 
   return value.trim();
+}
+
+function getBaseUrl() {
+  const base = process.env.APP_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3001";
+  return base.endsWith("/") ? base.slice(0, -1) : base;
 }
 
 export async function POST(request: Request) {
@@ -42,11 +49,15 @@ export async function POST(request: Request) {
 
   const referrer = await prisma.user.findUnique({
     where: { userId: referrerCode },
-    select: { id: true },
+    select: { id: true, email: true, name: true },
   });
 
   if (!referrer) {
     return NextResponse.json({ error: "紹介者IDが見つかりません。" }, { status: 404 });
+  }
+
+  if (!referrer.email) {
+    return NextResponse.json({ error: "親アカウントにメールアドレスが設定されていないため、承認メールを送信できません。" }, { status: 422 });
   }
 
   const user = await prisma.user.create({
@@ -62,5 +73,26 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ success: true, userCode: user.userId });
+  try {
+    const { token, expiresAt } = await issueActivationToken(user.id);
+    const approvalUrl = new URL("/signup/confirm", getBaseUrl());
+    approvalUrl.searchParams.set("token", token);
+    approvalUrl.searchParams.set("user", user.userId);
+
+    await sendParentApprovalEmail({
+      to: referrer.email,
+      childEmail: email,
+      childName: name,
+      parentName: referrer.name,
+      approvalUrl: approvalUrl.toString(),
+      expiresAt,
+    });
+
+    return NextResponse.json({ success: true, userCode: user.userId });
+  } catch {
+    return NextResponse.json(
+      { error: "確認メールの送信に失敗しました。時間をおいて再度お試しください。" },
+      { status: 500 },
+    );
+  }
 }
