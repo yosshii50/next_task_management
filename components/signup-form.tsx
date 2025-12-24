@@ -13,8 +13,11 @@ export default function SignupForm() {
     setError(null);
     setStatus("submitting");
 
-    const formData = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const formData = new FormData(formElement);
+    const name = (formData.get("name") as string | null)?.trim() ?? "";
     const email = (formData.get("email") as string | null)?.trim() ?? "";
+    const referrer = (formData.get("referrer") as string | null)?.trim() ?? "";
 
     if (!email.includes("@")) {
       setStatus("idle");
@@ -22,9 +25,36 @@ export default function SignupForm() {
       return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (!referrer) {
+      setStatus("idle");
+      setError("紹介者IDを入力してください。");
+      return;
+    }
 
-    setStatus("success");
+    try {
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, referrer }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "登録処理に失敗しました。時間をおいて再度お試しください。");
+      }
+
+      formElement.reset();
+      setStatus("success");
+    } catch (submissionError) {
+      const message =
+        submissionError instanceof Error ? submissionError.message : "登録処理に失敗しました。時間をおいて再度お試しください。";
+      setError(message);
+      setStatus("idle");
+    }
+
   }
 
   return (
