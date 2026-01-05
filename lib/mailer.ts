@@ -17,6 +17,13 @@ type ChildSignupNoticeParams = {
   tempPassword?: string;
 };
 
+type ChildActivationNoticeParams = {
+  to: string;
+  childName?: string | null;
+  parentName?: string | null;
+  loginUrl?: string;
+};
+
 function ensureMailerConfig() {
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
@@ -112,6 +119,41 @@ export async function sendChildSignupNotice(params: ChildSignupNoticeParams) {
       ${loginUrl ? `<li>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></li>` : ""}
     </ul>
     <p>承認完了後にログインしてください。</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function sendChildActivationNotice(params: ChildActivationNoticeParams) {
+  const { transporter, from } = ensureMailerConfig();
+  const childLabel = params.childName?.trim() || "ご担当者様";
+  const parentLabel = params.parentName?.trim() || "管理者";
+  const loginUrl = params.loginUrl || "";
+
+  const subject = "【FlowBase】アカウントが有効化されました";
+
+  const text = [
+    `${childLabel}`,
+    "",
+    `${parentLabel}がアカウントを承認しました。`,
+    loginUrl ? `ログインURL: ${loginUrl}` : "",
+    "",
+    "ログインしてご利用を開始してください。",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const html = `
+    <p>${childLabel}</p>
+    <p>${parentLabel}がアカウントを承認しました。</p>
+    ${loginUrl ? `<p>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></p>` : ""}
+    <p>ログインしてご利用を開始してください。</p>
   `;
 
   await transporter.sendMail({
