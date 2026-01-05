@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+
 import prisma from "@/lib/prisma";
 import { issueActivationToken } from "@/lib/activation";
 import { sendParentApprovalEmail } from "@/lib/mailer";
@@ -23,6 +26,11 @@ function sanitizeText(value: unknown) {
 function getBaseUrl() {
   const base = process.env.APP_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3001";
   return base.endsWith("/") ? base.slice(0, -1) : base;
+}
+
+function generateTempPassword() {
+  const raw = crypto.randomBytes(16).toString("base64url");
+  return raw.slice(0, 16);
 }
 
 export async function POST(request: Request) {
@@ -60,12 +68,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "親アカウントにメールアドレスが設定されていないため、承認メールを送信できません。" }, { status: 422 });
   }
 
+  const tempPassword = generateTempPassword();
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
   const user = await prisma.user.create({
     data: {
       name: name || null,
       email,
       parentId: referrer.id,
       isActive: false,
+      hashedPassword,
     },
     select: {
       id: true,
