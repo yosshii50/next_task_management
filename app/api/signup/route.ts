@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 import prisma from "@/lib/prisma";
 import { issueActivationToken } from "@/lib/activation";
-import { sendParentApprovalEmail } from "@/lib/mailer";
+import { sendChildSignupNotice, sendParentApprovalEmail } from "@/lib/mailer";
 
 function normalizeEmail(value: unknown) {
   if (typeof value !== "string") {
@@ -90,6 +90,7 @@ export async function POST(request: Request) {
     const approvalUrl = new URL("/signup/confirm", getBaseUrl());
     approvalUrl.searchParams.set("token", token);
     approvalUrl.searchParams.set("user", user.userId);
+    const loginUrl = getBaseUrl();
 
     await sendParentApprovalEmail({
       to: referrer.email,
@@ -98,6 +99,14 @@ export async function POST(request: Request) {
       parentName: referrer.name,
       approvalUrl: approvalUrl.toString(),
       expiresAt,
+    });
+
+    await sendChildSignupNotice({
+      to: email,
+      childName: name,
+      parentName: referrer.name,
+      loginUrl,
+      tempPassword,
     });
 
     return NextResponse.json({ success: true, userCode: user.userId });

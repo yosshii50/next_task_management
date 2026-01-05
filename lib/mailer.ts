@@ -9,6 +9,14 @@ type ParentApprovalMailParams = {
   expiresAt: Date;
 };
 
+type ChildSignupNoticeParams = {
+  to: string;
+  childName?: string | null;
+  parentName?: string | null;
+  loginUrl?: string;
+  tempPassword?: string;
+};
+
 function ensureMailerConfig() {
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
@@ -65,6 +73,45 @@ export async function sendParentApprovalEmail(params: ParentApprovalMailParams) 
     <p>以下のリンクから有効化を承認してください。</p>
     <p><a href="${params.approvalUrl}" target="_blank" rel="noopener noreferrer">アカウントを有効化する</a></p>
     <p>有効期限: ${params.expiresAt.toLocaleString("ja-JP")}</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function sendChildSignupNotice(params: ChildSignupNoticeParams) {
+  const { transporter, from } = ensureMailerConfig();
+  const childLabel = params.childName?.trim() || "ご担当者様";
+  const parentLabel = params.parentName?.trim() || "管理者";
+  const loginUrl = params.loginUrl || "";
+
+  const subject = "【FlowBase】ご登録を受け付けました（承認待ち）";
+
+  const text = [
+    `${childLabel}`,
+    "",
+    `${parentLabel}の承認後にアカウントが有効化されます。`,
+    params.tempPassword ? `仮パスワード: ${params.tempPassword}` : "",
+    loginUrl ? `ログインURL: ${loginUrl}` : "",
+    "",
+    "承認完了後にログインしてください。",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const html = `
+    <p>${childLabel}</p>
+    <p>${parentLabel}の承認後にアカウントが有効化されます。</p>
+    <ul>
+      ${params.tempPassword ? `<li>仮パスワード: <strong>${params.tempPassword}</strong></li>` : ""}
+      ${loginUrl ? `<li>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></li>` : ""}
+    </ul>
+    <p>承認完了後にログインしてください。</p>
   `;
 
   await transporter.sendMail({
