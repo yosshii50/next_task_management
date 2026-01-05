@@ -9,24 +9,45 @@ import TaskList from "@/components/task-list";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+const TOKYO_TIMEZONE = "Asia/Tokyo";
+
 const statusOptions = [
   { value: TaskStatus.TODO, label: "未着手" },
   { value: TaskStatus.IN_PROGRESS, label: "進行中" },
   { value: TaskStatus.DONE, label: "完了" },
 ];
 
-const formatDateForInput = (date: Date) => {
-  const tzOffset = date.getTimezoneOffset();
-  const localDate = new Date(date.getTime() - tzOffset * 60000);
-  return localDate.toISOString().slice(0, 10);
+const formatDateForInput = (date: Date, timeZone: string = TOKYO_TIMEZONE) => {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 };
 
 const getStartOfWeek = (reference: Date) => {
   const start = new Date(reference);
-  start.setHours(0, 0, 0, 0);
-  const weekday = start.getDay();
-  start.setDate(start.getDate() - weekday);
+  start.setUTCHours(0, 0, 0, 0);
+  const weekday = start.getUTCDay();
+  start.setUTCDate(start.getUTCDate() - weekday);
   return start;
+};
+
+const getJapanToday = () => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: TOKYO_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "0";
+  const year = Number(getPart("year"));
+  const month = Number(getPart("month"));
+  const day = Number(getPart("day"));
+
+  return new Date(Date.UTC(year, month - 1, day));
 };
 
 const WEEKS_TO_DISPLAY = 4;
@@ -100,8 +121,9 @@ export default async function DashboardPage() {
     return acc;
   }, {});
 
-  const todayIso = formatDateForInput(new Date());
-  const calendarStart = getStartOfWeek(new Date());
+  const japanToday = getJapanToday();
+  const todayIso = formatDateForInput(japanToday);
+  const calendarStart = getStartOfWeek(japanToday);
   const holidayMap = holidays.reduce<Record<string, string>>((acc, holiday) => {
     const iso = formatDateForInput(holiday.date);
     acc[iso] = holiday.name;
@@ -110,14 +132,16 @@ export default async function DashboardPage() {
 
   const calendarDays = Array.from({ length: WEEKS_TO_DISPLAY * DAYS_PER_WEEK }, (_, index) => {
     const date = new Date(calendarStart);
-    date.setDate(calendarStart.getDate() + index);
+    date.setUTCDate(calendarStart.getUTCDate() + index);
     const iso = formatDateForInput(date);
-    const weekday = date.getDay();
+    const weekday = date.getUTCDay();
     const holidayName = holidayMap[iso];
     const isHoliday = weeklyHolidayMap[weekday] || Boolean(holidayName);
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
     return {
       date: iso,
-      label: `${date.getMonth() + 1}/${date.getDate()}`,
+      label: `${month}/${day}`,
       isToday: iso === todayIso,
       isHoliday,
       holidayName: holidayName ?? undefined,
