@@ -2,18 +2,24 @@ import crypto from "crypto";
 
 import prisma from "@/lib/prisma";
 
+type ActivationUser = {
+  id: number;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  isActive: boolean;
+};
+
 type ActivationValidationResult =
   | { status: "invalid"; reason: string }
   | {
       status: "valid";
-      user: {
-        id: number;
-        userId: string;
-        name: string | null;
-        email: string | null;
-        isActive: boolean;
-      };
+      user: ActivationUser;
     };
+
+type ActivationResult =
+  | { status: "invalid"; reason: string }
+  | { status: "activated"; user: ActivationUser };
 
 const TOKEN_BYTES = 32;
 const TOKEN_TTL_HOURS = 48;
@@ -81,11 +87,11 @@ export async function validateActivationToken(userCode: string, rawToken: string
   return { status: "valid", user };
 }
 
-export async function activateUser(userCode: string, rawToken: string) {
+export async function activateUser(userCode: string, rawToken: string): Promise<ActivationResult> {
   const validation = await validateActivationToken(userCode, rawToken);
 
   if (validation.status !== "valid") {
-    return validation;
+    return { status: "invalid", reason: validation.reason };
   }
 
   const now = new Date();
