@@ -45,11 +45,7 @@ export async function PATCH(request: Request) {
 
   const child = await prisma.user.findUnique({
     where: { id: result.user.id },
-    select: {
-      name: true,
-      email: true,
-      parent: { select: { name: true } },
-    },
+    include: { parent: { select: { name: true } } },
   });
 
   if (child?.email) {
