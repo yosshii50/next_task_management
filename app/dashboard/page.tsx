@@ -50,7 +50,8 @@ const getJapanToday = () => {
   return new Date(Date.UTC(year, month - 1, day));
 };
 
-const WEEKS_TO_DISPLAY = 5;
+const DEFAULT_WEEKS_TO_DISPLAY = 5;
+const MAX_WEEKS_TO_PRELOAD = 8;
 const DAYS_PER_WEEK = 7;
 
 export default async function DashboardPage() {
@@ -130,7 +131,7 @@ export default async function DashboardPage() {
     return acc;
   }, {});
 
-  const calendarDays = Array.from({ length: WEEKS_TO_DISPLAY * DAYS_PER_WEEK }, (_, index) => {
+  const calendarDays = Array.from({ length: MAX_WEEKS_TO_PRELOAD * DAYS_PER_WEEK }, (_, index) => {
     const date = new Date(calendarStart);
     date.setUTCDate(calendarStart.getUTCDate() + index);
     const iso = formatDateForInput(date);
@@ -148,10 +149,6 @@ export default async function DashboardPage() {
       tasks: tasksByDate[iso] ?? [],
     };
   });
-
-  const calendarWeeks = Array.from({ length: WEEKS_TO_DISPLAY }, (_, weekIndex) =>
-    calendarDays.slice(weekIndex * DAYS_PER_WEEK, weekIndex * DAYS_PER_WEEK + DAYS_PER_WEEK)
-  );
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -179,7 +176,13 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <TaskCalendar weeks={calendarWeeks} />
+        <TaskCalendar
+          days={calendarDays}
+          defaultWeeks={DEFAULT_WEEKS_TO_DISPLAY}
+          minWeeks={3}
+          maxWeeks={MAX_WEEKS_TO_PRELOAD}
+          daysPerWeek={DAYS_PER_WEEK}
+        />
 
         <TaskList
           tasks={clientTasks}

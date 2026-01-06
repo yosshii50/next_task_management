@@ -1,3 +1,6 @@
+"use client";
+
+import { type ChangeEvent, useMemo, useState } from "react";
 import type { TaskStatus } from "@prisma/client";
 
 type CalendarTask = {
@@ -16,7 +19,11 @@ type CalendarDay = {
 };
 
 type TaskCalendarProps = {
-  weeks: CalendarDay[][];
+  days: CalendarDay[];
+  defaultWeeks: number;
+  minWeeks: number;
+  maxWeeks: number;
+  daysPerWeek: number;
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -27,14 +34,50 @@ const statusColors: Record<TaskStatus, string> = {
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
-export default function TaskCalendar({ weeks }: TaskCalendarProps) {
+export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, daysPerWeek }: TaskCalendarProps) {
+  const initialWeeks = Math.min(Math.max(defaultWeeks, minWeeks), maxWeeks);
+  const [visibleWeeks, setVisibleWeeks] = useState(initialWeeks);
+
+  const clampedWeeks = useMemo(() => Math.min(Math.max(visibleWeeks, minWeeks), maxWeeks), [visibleWeeks, minWeeks, maxWeeks]);
+  const visibleDays = useMemo(
+    () => days.slice(0, clampedWeeks * daysPerWeek),
+    [days, clampedWeeks, daysPerWeek]
+  );
+  const weeks = useMemo(
+    () =>
+      Array.from({ length: clampedWeeks }, (_, weekIndex) =>
+        visibleDays.slice(weekIndex * daysPerWeek, weekIndex * daysPerWeek + daysPerWeek)
+      ),
+    [visibleDays, clampedWeeks, daysPerWeek]
+  );
+
+  const handleWeeksChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value);
+    setVisibleWeeks(next);
+  };
+
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Schedule</p>
           <h2 className="text-2xl font-semibold text-white">カレンダー</h2>
-          <p className="text-sm text-white/60">今週以降5週間の予定を確認できます。</p>
+          <p className="text-sm text-white/60">今週以降{clampedWeeks}週間の予定を確認できます。</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-white/80">
+          <label htmlFor="weeksRange" className="whitespace-nowrap text-xs text-white/60">
+            表示週数
+          </label>
+          <input
+            id="weeksRange"
+            type="range"
+            min={minWeeks}
+            max={maxWeeks}
+            value={clampedWeeks}
+            onChange={handleWeeksChange}
+            className="h-1.5 w-28 cursor-pointer appearance-none rounded bg-white/10 accent-emerald-300"
+          />
+          <span className="text-xs">{clampedWeeks}週</span>
         </div>
       </div>
       <div className="mt-6 grid grid-cols-7 text-center text-xs font-semibold uppercase text-white/60">
