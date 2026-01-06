@@ -52,7 +52,7 @@ function ensureMailerConfig() {
 
 export async function sendParentApprovalEmail(params: ParentApprovalMailParams) {
   const { transporter, from } = ensureMailerConfig();
-  const childLabel = params.childName?.trim() || "新規メンバー";
+  const childLabel = params.childName?.trim() || "未設定";
   const parentLabel = params.parentName?.trim() || "ご担当者様";
 
   const subject = "【FlowBase】新規アカウント有効化のご確認";
