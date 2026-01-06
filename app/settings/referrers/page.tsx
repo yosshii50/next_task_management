@@ -18,7 +18,7 @@ export default async function ReferrersPage() {
     redirect("/");
   }
 
-  const children = await prisma.user.findMany({
+  const childAccounts = await prisma.user.findMany({
     where: { parentId: userId },
     select: {
       id: true,
@@ -30,7 +30,7 @@ export default async function ReferrersPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const clientChildren = children.map((child) => ({
+  const clientChildAccounts = childAccounts.map((child) => ({
     id: child.id,
     name: child.name,
     email: child.email,
@@ -57,7 +57,7 @@ export default async function ReferrersPage() {
 
         <section className="space-y-4">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <ReferrersClient children={clientChildren} />
+            <ReferrersClient childAccounts={clientChildAccounts} />
           </div>
         </section>
       </div>

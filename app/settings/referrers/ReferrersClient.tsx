@@ -13,10 +13,10 @@ type Child = {
 };
 
 type Props = {
-  children: Child[];
+  childAccounts: Child[];
 };
 
-export default function ReferrersClient({ children }: Props) {
+export default function ReferrersClient({ childAccounts }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -63,11 +63,11 @@ export default function ReferrersClient({ children }: Props) {
             <p className="mt-2 text-sm text-white/70">承認状況や連絡先をここで確認・整理できます。</p>
           </div>
           <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-            {children.length} 件
+            {childAccounts.length} 件
           </span>
         </div>
 
-        {children.length === 0 ? (
+        {childAccounts.length === 0 ? (
           <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-12 text-sm text-white/60">
             まだ紹介経由の子アカウントがありません。
           </div>
@@ -99,7 +99,7 @@ export default function ReferrersClient({ children }: Props) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {children.map((child) => (
+                  {childAccounts.map((child) => (
                     <tr key={child.id} className="hover:bg-white/5">
                       <td className="px-4 py-3">
                         <label className="flex items-center gap-2 text-white/80">
