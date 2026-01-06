@@ -50,7 +50,7 @@ const getJapanToday = () => {
   return new Date(Date.UTC(year, month - 1, day));
 };
 
-const WEEKS_TO_DISPLAY = 4;
+const WEEKS_TO_DISPLAY = 5;
 const DAYS_PER_WEEK = 7;
 
 export default async function DashboardPage() {

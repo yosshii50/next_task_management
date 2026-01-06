@@ -34,7 +34,7 @@ export default function TaskCalendar({ weeks }: TaskCalendarProps) {
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Schedule</p>
           <h2 className="text-2xl font-semibold text-white">カレンダー</h2>
-          <p className="text-sm text-white/60">今週以降4週間の予定を確認できます。</p>
+          <p className="text-sm text-white/60">今週以降5週間の予定を確認できます。</p>
         </div>
       </div>
       <div className="mt-6 grid grid-cols-7 text-center text-xs font-semibold uppercase text-white/60">
