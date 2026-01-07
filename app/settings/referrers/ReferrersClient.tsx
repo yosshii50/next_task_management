@@ -97,9 +97,9 @@ export default function ReferrersClient({ childAccounts }: Props) {
     setIsUpdatingStatus(true);
     try {
       const formData = new FormData();
-      for (const id of selectedIds) {
+      selectedIds.forEach((id) => {
         formData.append("childIds", String(id));
-      }
+      });
       formData.append("targetStatus", targetStatus);
 
       await updateChildrenStatus(formData);
