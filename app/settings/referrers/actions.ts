@@ -6,7 +6,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
 import { authOptions } from "@/lib/auth";
-import { sendChildDirectInvite } from "@/lib/mailer";
+import { sendChildActivationNotice, sendChildDirectInvite } from "@/lib/mailer";
 import prisma from "@/lib/prisma";
 
 async function requireUserId() {
@@ -117,18 +117,63 @@ export async function updateChildrenStatus(formData: FormData) {
   const targetStatus = formData.get("targetStatus");
   const isActive =
     targetStatus === "active" ? true : targetStatus === "inactive" ? false : null;
+  const sendActivationMail =
+    isActive === true && formData.get("sendActivationMail") === "true";
 
   if (childIds.length === 0 || isActive === null) {
     return;
   }
 
-  await prisma.user.updateMany({
+  const children = await prisma.user.findMany({
     where: {
       id: { in: childIds },
       parentId: userId,
     },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      isActive: true,
+    },
+  });
+
+  if (children.length === 0) {
+    return;
+  }
+
+  await prisma.user.updateMany({
+    where: {
+      id: { in: children.map((child) => child.id) },
+      parentId: userId,
+    },
     data: { isActive },
   });
+
+  if (sendActivationMail) {
+    const parent = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+    const loginUrl = getBaseUrl();
+    const targets = children.filter((child) => !child.isActive && child.email);
+
+    if (targets.length > 0) {
+      try {
+        await Promise.all(
+          targets.map((child) =>
+            sendChildActivationNotice({
+              to: child.email as string,
+              childName: child.name,
+              parentName: parent?.name,
+              loginUrl,
+            })
+          )
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 
   revalidatePath("/settings/referrers");
 }

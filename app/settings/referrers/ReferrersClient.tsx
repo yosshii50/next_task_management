@@ -33,6 +33,8 @@ export default function ReferrersClient({ childAccounts }: Props) {
   const [isInviting, setIsInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [showActivateConfirm, setShowActivateConfirm] = useState(false);
+  const [sendActivationEmail, setSendActivationEmail] = useState(true);
 
   useEffect(() => {
     setMemoDrafts(new Map(childAccounts.map((child) => [child.id, child.memo])));
@@ -91,7 +93,10 @@ export default function ReferrersClient({ childAccounts }: Props) {
     }
   };
 
-  const handleBulkStatusChange = async (targetStatus: "active" | "inactive") => {
+  const handleBulkStatusChange = async (
+    targetStatus: "active" | "inactive",
+    options?: { sendMail?: boolean }
+  ) => {
     if (selectedCount === 0 || isUpdatingStatus) return;
 
     setIsUpdatingStatus(true);
@@ -101,6 +106,9 @@ export default function ReferrersClient({ childAccounts }: Props) {
         formData.append("childIds", String(id));
       });
       formData.append("targetStatus", targetStatus);
+      if (targetStatus === "active") {
+        formData.append("sendActivationMail", options?.sendMail ? "true" : "false");
+      }
 
       await updateChildrenStatus(formData);
     } catch (error) {
@@ -108,6 +116,17 @@ export default function ReferrersClient({ childAccounts }: Props) {
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  const handleRequestActivation = () => {
+    if (selectedCount === 0 || isUpdatingStatus) return;
+    setSendActivationEmail(true);
+    setShowActivateConfirm(true);
+  };
+
+  const handleConfirmActivation = () => {
+    setShowActivateConfirm(false);
+    void handleBulkStatusChange("active", { sendMail: sendActivationEmail });
   };
 
   const handleMemoChange = (id: number, value: string) => {
@@ -235,7 +254,7 @@ export default function ReferrersClient({ childAccounts }: Props) {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => handleBulkStatusChange("active")}
+                  onClick={handleRequestActivation}
                   disabled={selectedCount === 0 || isUpdatingStatus}
                   className="rounded-full border border-emerald-300/60 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition enabled:hover:border-emerald-200 enabled:hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-white/40"
                 >
@@ -347,6 +366,43 @@ export default function ReferrersClient({ childAccounts }: Props) {
         {selectionInputs}
         <button ref={deleteSubmitRef} type="submit" className="hidden" aria-hidden="true" />
       </form>
+
+      {showActivateConfirm && selectedCount > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-6 text-white shadow-2xl backdrop-blur">
+            <h3 className="text-lg font-semibold">有効化の確認</h3>
+            <p className="mt-3 text-sm text-white/80">
+              選択した {selectedCount} 件のアカウントを有効化します。よろしいですか？
+            </p>
+            <label className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={sendActivationEmail}
+                onChange={(event) => setSendActivationEmail(event.target.checked)}
+                className="h-4 w-4 rounded border-white/30 bg-transparent text-emerald-400 focus:ring-emerald-400"
+              />
+              <span>有効化されたことをメールで通知する（送信先: 子アカウントのメールアドレス）</span>
+            </label>
+            <div className="mt-6 flex justify-end gap-3 text-sm">
+              <button
+                type="button"
+                onClick={() => setShowActivateConfirm(false)}
+                className="rounded-full border border-white/20 px-4 py-2 font-semibold text-white transition hover:border-white/40"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmActivation}
+                disabled={isUpdatingStatus}
+                className="rounded-full border border-emerald-300/60 bg-emerald-500/20 px-4 py-2 font-semibold text-emerald-100 transition hover:border-emerald-200 hover:bg-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUpdatingStatus ? "処理中..." : "有効化する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showConfirm && selectedCount > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4">
