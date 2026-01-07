@@ -64,7 +64,7 @@ export default function SignupForm() {
     >
       <div>
         <label className="mb-1 block text-sm font-medium text-white/80" htmlFor="name">
-          ご担当者名
+          名前
         </label>
         <input
           id="name"

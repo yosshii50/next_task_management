@@ -61,8 +61,7 @@ export async function sendParentApprovalEmail(params: ParentApprovalMailParams) 
     `${parentLabel}`,
     "",
     "以下のユーザーから招待による新規アカウント作成が行われました。",
-    `氏名: ${childLabel}`,
-    `メールアドレス: ${params.childEmail}`,
+    `名前: ${childLabel}`,
     "",
     "以下のリンクから有効化を承認してください。",
     params.approvalUrl,
@@ -74,8 +73,7 @@ export async function sendParentApprovalEmail(params: ParentApprovalMailParams) 
     <p>${parentLabel}</p>
     <p>以下のユーザーから招待による新規アカウント作成が行われました。</p>
     <ul>
-      <li>氏名: ${childLabel}</li>
-      <li>メールアドレス: ${params.childEmail}</li>
+      <li>名前: ${childLabel}</li>
     </ul>
     <p>以下のリンクから有効化を承認してください。</p>
     <p><a href="${params.approvalUrl}" target="_blank" rel="noopener noreferrer">アカウントを有効化する</a></p>
@@ -93,16 +91,18 @@ export async function sendParentApprovalEmail(params: ParentApprovalMailParams) 
 
 export async function sendChildSignupNotice(params: ChildSignupNoticeParams) {
   const { transporter, from } = ensureMailerConfig();
-  const childLabel = params.childName?.trim() || "ご担当者様";
+  const childLabel = params.childName?.trim() || "未設定";
   const parentLabel = params.parentName?.trim() || "管理者";
   const loginUrl = params.loginUrl || "";
+  const childEmail = params.to;
 
   const subject = "【FlowBase】ご登録を受け付けました（承認待ち）";
 
   const text = [
-    `${childLabel}`,
+    `${childLabel} 様`,
     "",
-    `${parentLabel}の承認後にアカウントが有効化されます。`,
+    `メールアドレス: ${childEmail}`,
+    `${parentLabel} 様の承認後にアカウントが有効化されます。`,
     params.tempPassword ? `仮パスワード: ${params.tempPassword}` : "",
     loginUrl ? `ログインURL: ${loginUrl}` : "",
     "",
@@ -112,8 +112,9 @@ export async function sendChildSignupNotice(params: ChildSignupNoticeParams) {
     .join("\n");
 
   const html = `
-    <p>${childLabel}</p>
-    <p>${parentLabel}の承認後にアカウントが有効化されます。</p>
+    <p>${childLabel} 様</p>
+    <p>メールアドレス: <strong>${childEmail}</strong></p>
+    <p>${parentLabel} 様の承認後にアカウントが有効化されます。</p>
     <ul>
       ${params.tempPassword ? `<li>仮パスワード: <strong>${params.tempPassword}</strong></li>` : ""}
       ${loginUrl ? `<li>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></li>` : ""}
@@ -132,16 +133,18 @@ export async function sendChildSignupNotice(params: ChildSignupNoticeParams) {
 
 export async function sendChildActivationNotice(params: ChildActivationNoticeParams) {
   const { transporter, from } = ensureMailerConfig();
-  const childLabel = params.childName?.trim() || "ご担当者様";
+  const childLabel = params.childName?.trim() || "未設定";
   const parentLabel = params.parentName?.trim() || "管理者";
   const loginUrl = params.loginUrl || "";
+  const childEmail = params.to;
 
   const subject = "【FlowBase】アカウントが有効化されました";
 
   const text = [
-    `${childLabel}`,
+    `${childLabel} 様`,
     "",
-    `${parentLabel}がアカウントを承認しました。`,
+    `メールアドレス: ${childEmail}`,
+    `${parentLabel} 様がアカウントを承認しました。`,
     loginUrl ? `ログインURL: ${loginUrl}` : "",
     "",
     "ログインしてご利用を開始してください。",
@@ -150,8 +153,9 @@ export async function sendChildActivationNotice(params: ChildActivationNoticePar
     .join("\n");
 
   const html = `
-    <p>${childLabel}</p>
-    <p>${parentLabel}がアカウントを承認しました。</p>
+    <p>${childLabel} 様</p>
+    <p>メールアドレス: <strong>${childEmail}</strong></p>
+    <p>${parentLabel} 様がアカウントを承認しました。</p>
     ${loginUrl ? `<p>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></p>` : ""}
     <p>ログインしてご利用を開始してください。</p>
   `;
