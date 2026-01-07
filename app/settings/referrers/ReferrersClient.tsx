@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { deleteChildren, updateChildMemo } from "./actions";
+import { deleteChildren, updateChildMemo, updateChildrenStatus } from "./actions";
 
 type Child = {
   id: number;
@@ -26,6 +26,8 @@ export default function ReferrersClient({ childAccounts }: Props) {
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
   const [errorIds, setErrorIds] = useState<Set<number>>(new Set());
   const formRef = useRef<HTMLFormElement>(null);
+  const deleteSubmitRef = useRef<HTMLButtonElement>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     setMemoDrafts(new Map(childAccounts.map((child) => [child.id, child.memo])));
@@ -55,7 +57,26 @@ export default function ReferrersClient({ childAccounts }: Props) {
   const submitDeletion = () => {
     if (!formRef.current) return;
     setShowConfirm(false);
-    formRef.current.requestSubmit();
+    formRef.current.requestSubmit(deleteSubmitRef.current ?? undefined);
+  };
+
+  const handleBulkStatusChange = async (targetStatus: "active" | "inactive") => {
+    if (selectedCount === 0 || isUpdatingStatus) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const formData = new FormData();
+      for (const id of selectedIds) {
+        formData.append("childIds", String(id));
+      }
+      formData.append("targetStatus", targetStatus);
+
+      await updateChildrenStatus(formData);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   const handleMemoChange = (id: number, value: string) => {
@@ -150,14 +171,32 @@ export default function ReferrersClient({ childAccounts }: Props) {
           <>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-amber-400/5 px-4 py-3 text-sm text-white/80">
               <span>選択した子アカウントを一括削除できます（元に戻せません）。</span>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={selectedCount === 0}
-                className="rounded-full border border-red-300/50 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-100 transition enabled:hover:border-red-200 enabled:hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-white/40"
-              >
-                選択したアカウントを削除
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleBulkStatusChange("active")}
+                  disabled={selectedCount === 0 || isUpdatingStatus}
+                  className="rounded-full border border-emerald-300/60 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition enabled:hover:border-emerald-200 enabled:hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-white/40"
+                >
+                  {isUpdatingStatus ? "処理中..." : "選択を有効化"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBulkStatusChange("inactive")}
+                  disabled={selectedCount === 0 || isUpdatingStatus}
+                  className="rounded-full border border-amber-300/60 bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-100 transition enabled:hover:border-amber-200 enabled:hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-white/40"
+                >
+                  {isUpdatingStatus ? "処理中..." : "選択を無効化"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={selectedCount === 0}
+                  className="rounded-full border border-red-300/50 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-100 transition enabled:hover:border-red-200 enabled:hover:bg-red-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-white/40"
+                >
+                  選択したアカウントを削除
+                </button>
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-white/10">
@@ -245,6 +284,7 @@ export default function ReferrersClient({ childAccounts }: Props) {
         )}
 
         {selectionInputs}
+        <button ref={deleteSubmitRef} type="submit" className="hidden" aria-hidden="true" />
       </form>
 
       {showConfirm && selectedCount > 0 && (

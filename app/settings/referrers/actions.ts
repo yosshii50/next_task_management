@@ -37,6 +37,29 @@ export async function deleteChildren(formData: FormData) {
   revalidatePath("/settings/referrers");
 }
 
+export async function updateChildrenStatus(formData: FormData) {
+  const userId = await requireUserId();
+  const rawIds = formData.getAll("childIds").map((v) => Number(v));
+  const childIds = rawIds.filter((id) => Number.isInteger(id) && id > 0);
+  const targetStatus = formData.get("targetStatus");
+  const isActive =
+    targetStatus === "active" ? true : targetStatus === "inactive" ? false : null;
+
+  if (childIds.length === 0 || isActive === null) {
+    return;
+  }
+
+  await prisma.user.updateMany({
+    where: {
+      id: { in: childIds },
+      parentId: userId,
+    },
+    data: { isActive },
+  });
+
+  revalidatePath("/settings/referrers");
+}
+
 export async function updateChildMemo(formData: FormData) {
   const userId = await requireUserId();
   const childId = Number(formData.get("childId"));
