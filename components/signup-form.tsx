@@ -7,6 +7,8 @@ type FormStatus = "idle" | "submitting" | "success";
 export default function SignupForm() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [showNameInfo, setShowNameInfo] = useState(false);
+  const [showEmailInfo, setShowEmailInfo] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,31 +71,69 @@ export default function SignupForm() {
       className="space-y-5 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur"
     >
       <div>
-        <label className="mb-1 block text-sm font-medium text-white/80" htmlFor="name">
-          名前
-        </label>
+        <div className="mb-1 flex items-center gap-2">
+          <label className="block text-sm font-medium text-white/80" htmlFor="name">
+            名前
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowNameInfo((prev) => !prev)}
+            aria-expanded={showNameInfo}
+            className="flex h-5 w-5 items-center justify-center rounded-full border border-white/40 text-xs font-bold text-white/80 transition hover:border-emerald-300 hover:text-emerald-200"
+            title="紹介者があなたを識別するために使用します"
+          >
+            ?
+          </button>
+        </div>
         <input
           id="name"
           name="name"
           type="text"
           required
-          placeholder="山田 太郎"
+          placeholder="オレだよオレ"
           className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
         />
+        {showNameInfo && (
+          <p className="mt-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80">
+            紹介者が申込者を識別するために利用します、紹介者に伝わる名前を入力してください。
+          </p>
+        )}
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-white/80" htmlFor="email">
-          メールアドレス
-        </label>
+        <div className="mb-1 flex items-center gap-2">
+          <label className="block text-sm font-medium text-white/80" htmlFor="email">
+            メールアドレス
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowEmailInfo((prev) => !prev)}
+            aria-expanded={showEmailInfo}
+            className="flex h-5 w-5 items-center justify-center rounded-full border border-white/40 text-xs font-bold text-white/80 transition hover:border-emerald-300 hover:text-emerald-200"
+            title="紹介者にはメールアドレスは通知されません"
+          >
+            ?
+          </button>
+        </div>
         <input
           id="email"
           name="email"
           type="email"
           required
           placeholder="you@example.com"
+          lang="en"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          title="紹介者にはメールアドレスは通知されません"
           className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
         />
+        {showEmailInfo && (
+          <p className="mt-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80">
+            入力されたメールアドレスは紹介者を含め、誰にも共有されません。
+          </p>
+        )}
       </div>
 
       <div>
@@ -106,13 +146,18 @@ export default function SignupForm() {
           type="text"
           required
           placeholder="紹介者コードを入力してください"
+          lang="en"
+          inputMode="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
         />
       </div>
 
       {error && <p className="text-sm text-rose-300">{error}</p>}
       {status === "success" && (
-        <p className="rounded-xl bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">送信が完了しました。担当者より1営業日以内にご連絡いたします。</p>
+        <p className="rounded-xl bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">メールの送信が完了しました。仮パスワードを確認し、紹介者の承認をお待ちください。</p>
       )}
 
       <button
