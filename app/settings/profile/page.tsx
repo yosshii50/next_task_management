@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ProfileForm from "./ProfileForm";
+import ReferrerIdCard from "@/components/referrer-id-card";
 
 export default async function ProfileSettingsPage() {
   const session = await getServerSession(authOptions);
@@ -20,11 +21,12 @@ export default async function ProfileSettingsPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true },
+    select: { name: true, email: true, userId: true },
   });
 
   const displayName = user?.name ?? "";
   const email = user?.email ?? "";
+  const referrerId = user?.userId ?? "";
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -44,6 +46,8 @@ export default async function ProfileSettingsPage() {
         </div>
 
         <section className="space-y-6">
+          <ReferrerIdCard referrerId={referrerId} />
+
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="mb-6">
               <h2 className="text-xl font-semibold">名前</h2>

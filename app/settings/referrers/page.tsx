@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import ReferrersClient from "./ReferrersClient";
+import ReferrerIdCard from "@/components/referrer-id-card";
 
 export default async function ReferrersPage() {
   const session = await getServerSession(authOptions);
@@ -17,6 +18,13 @@ export default async function ReferrersPage() {
   if (!userId) {
     redirect("/");
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { userId: true },
+  });
+
+  const referrerId = user?.userId ?? "";
 
   const childAccounts = await prisma.user.findMany({
     where: { parentId: userId },
@@ -60,6 +68,8 @@ export default async function ReferrersPage() {
         </div>
 
         <section className="space-y-4">
+          <ReferrerIdCard referrerId={referrerId} />
+
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <ReferrersClient childAccounts={clientChildAccounts} />
           </div>
