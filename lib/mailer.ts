@@ -188,7 +188,6 @@ export async function sendChildLockNotice(params: ChildLockNoticeParams) {
   const { transporter, from } = ensureMailerConfig();
   const childLabel = params.childName?.trim() || "未設定";
   const parentLabel = params.parentName?.trim() || "管理者";
-  const loginUrl = params.loginUrl || "";
   const childEmail = params.to;
 
   const subject = "【FlowBase】アカウントがロックされました";
