@@ -19,6 +19,12 @@ export default function SignupForm() {
     const email = (formData.get("email") as string | null)?.trim() ?? "";
     const referrer = (formData.get("referrer") as string | null)?.trim() ?? "";
 
+    if (!name) {
+      setStatus("idle");
+      setError("名前を入力してください。");
+      return;
+    }
+
     if (!email.includes("@")) {
       setStatus("idle");
       setError("正しいメールアドレスを入力してください。");
@@ -70,6 +76,7 @@ export default function SignupForm() {
           id="name"
           name="name"
           type="text"
+          required
           placeholder="山田 太郎"
           className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
         />
