@@ -6,7 +6,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
 import { authOptions } from "@/lib/auth";
-import { sendChildActivationNotice, sendChildDirectInvite } from "@/lib/mailer";
+import { sendChildActivationNotice, sendChildDirectInvite, sendChildLockNotice } from "@/lib/mailer";
 import prisma from "@/lib/prisma";
 
 async function requireUserId() {
@@ -119,6 +119,8 @@ export async function updateChildrenStatus(formData: FormData) {
     targetStatus === "active" ? true : targetStatus === "inactive" ? false : null;
   const sendActivationMail =
     isActive === true && formData.get("sendActivationMail") === "true";
+  const sendDeactivationMail =
+    isActive === false && formData.get("sendDeactivationMail") === "true";
 
   if (childIds.length === 0 || isActive === null) {
     return;
@@ -162,6 +164,32 @@ export async function updateChildrenStatus(formData: FormData) {
         await Promise.all(
           targets.map((child) =>
             sendChildActivationNotice({
+              to: child.email as string,
+              childName: child.name,
+              parentName: parent?.name,
+              loginUrl,
+            })
+          )
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
+  if (sendDeactivationMail) {
+    const parent = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+    const loginUrl = getBaseUrl();
+    const targets = children.filter((child) => child.isActive && child.email);
+
+    if (targets.length > 0) {
+      try {
+        await Promise.all(
+          targets.map((child) =>
+            sendChildLockNotice({
               to: child.email as string,
               childName: child.name,
               parentName: parent?.name,

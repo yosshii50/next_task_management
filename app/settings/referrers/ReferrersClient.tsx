@@ -35,6 +35,8 @@ export default function ReferrersClient({ childAccounts }: Props) {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [sendActivationEmail, setSendActivationEmail] = useState(true);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [sendDeactivationEmail, setSendDeactivationEmail] = useState(false);
 
   useEffect(() => {
     setMemoDrafts(new Map(childAccounts.map((child) => [child.id, child.memo])));
@@ -108,6 +110,8 @@ export default function ReferrersClient({ childAccounts }: Props) {
       formData.append("targetStatus", targetStatus);
       if (targetStatus === "active") {
         formData.append("sendActivationMail", options?.sendMail ? "true" : "false");
+      } else {
+        formData.append("sendDeactivationMail", options?.sendMail ? "true" : "false");
       }
 
       await updateChildrenStatus(formData);
@@ -127,6 +131,17 @@ export default function ReferrersClient({ childAccounts }: Props) {
   const handleConfirmActivation = () => {
     setShowActivateConfirm(false);
     void handleBulkStatusChange("active", { sendMail: sendActivationEmail });
+  };
+
+  const handleRequestDeactivation = () => {
+    if (selectedCount === 0 || isUpdatingStatus) return;
+    setSendDeactivationEmail(false);
+    setShowDeactivateConfirm(true);
+  };
+
+  const handleConfirmDeactivation = () => {
+    setShowDeactivateConfirm(false);
+    void handleBulkStatusChange("inactive", { sendMail: sendDeactivationEmail });
   };
 
   const handleMemoChange = (id: number, value: string) => {
@@ -262,7 +277,7 @@ export default function ReferrersClient({ childAccounts }: Props) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleBulkStatusChange("inactive")}
+                  onClick={handleRequestDeactivation}
                   disabled={selectedCount === 0 || isUpdatingStatus}
                   className="rounded-full border border-amber-300/60 bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-100 transition enabled:hover:border-amber-200 enabled:hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-white/40"
                 >
@@ -398,6 +413,43 @@ export default function ReferrersClient({ childAccounts }: Props) {
                 className="rounded-full border border-emerald-300/60 bg-emerald-500/20 px-4 py-2 font-semibold text-emerald-100 transition hover:border-emerald-200 hover:bg-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isUpdatingStatus ? "処理中..." : "有効化する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeactivateConfirm && selectedCount > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-6 text-white shadow-2xl backdrop-blur">
+            <h3 className="text-lg font-semibold">無効化の確認</h3>
+            <p className="mt-3 text-sm text-white/80">
+              選択した {selectedCount} 件のアカウントを無効化します。よろしいですか？
+            </p>
+            <label className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={sendDeactivationEmail}
+                onChange={(event) => setSendDeactivationEmail(event.target.checked)}
+                className="h-4 w-4 rounded border-white/30 bg-transparent text-amber-400 focus:ring-amber-400"
+              />
+              <span>ロックされた旨のメールを送信する（送信先: 子アカウントのメールアドレス）</span>
+            </label>
+            <div className="mt-6 flex justify-end gap-3 text-sm">
+              <button
+                type="button"
+                onClick={() => setShowDeactivateConfirm(false)}
+                className="rounded-full border border-white/20 px-4 py-2 font-semibold text-white transition hover:border-white/40"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeactivation}
+                disabled={isUpdatingStatus}
+                className="rounded-full border border-amber-300/60 bg-amber-500/20 px-4 py-2 font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUpdatingStatus ? "処理中..." : "無効化する"}
               </button>
             </div>
           </div>

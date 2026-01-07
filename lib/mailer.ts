@@ -24,6 +24,13 @@ type ChildActivationNoticeParams = {
   loginUrl?: string;
 };
 
+type ChildLockNoticeParams = {
+  to: string;
+  childName?: string | null;
+  parentName?: string | null;
+  loginUrl?: string;
+};
+
 type ChildDirectInviteParams = {
   to: string;
   childName?: string | null;
@@ -166,6 +173,43 @@ export async function sendChildActivationNotice(params: ChildActivationNoticePar
     <p>${parentLabel} 様がアカウントを承認しました。</p>
     ${loginUrl ? `<p>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></p>` : ""}
     <p>ログインしてご利用を開始してください。</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function sendChildLockNotice(params: ChildLockNoticeParams) {
+  const { transporter, from } = ensureMailerConfig();
+  const childLabel = params.childName?.trim() || "未設定";
+  const parentLabel = params.parentName?.trim() || "管理者";
+  const loginUrl = params.loginUrl || "";
+  const childEmail = params.to;
+
+  const subject = "【FlowBase】アカウントがロックされました";
+
+  const text = [
+    `${childLabel} 様`,
+    "",
+    `メールアドレス: ${childEmail}`,
+    `${parentLabel} 様がアカウントを一時的にロックしました。`,
+    "ログインはできません。必要な場合は管理者へご連絡ください。",
+    loginUrl ? `ログインURL: ${loginUrl}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const html = `
+    <p>${childLabel} 様</p>
+    <p>メールアドレス: <strong>${childEmail}</strong></p>
+    <p>${parentLabel} 様がアカウントを一時的にロックしました。</p>
+    <p>ログインはできません。必要な場合は管理者へご連絡ください。</p>
+    ${loginUrl ? `<p>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></p>` : ""}
   `;
 
   await transporter.sendMail({
