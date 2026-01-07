@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 import { authOptions } from "@/lib/auth";
+import { sendChildDirectInvite } from "@/lib/mailer";
 import prisma from "@/lib/prisma";
 
 async function requireUserId() {
@@ -16,6 +19,76 @@ async function requireUserId() {
   }
 
   return userId;
+}
+
+function normalizeEmail(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim().toLowerCase();
+}
+
+function sanitizeName(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, 100);
+}
+
+function getBaseUrl() {
+  const base = process.env.APP_BASE_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3001";
+  return base.endsWith("/") ? base.slice(0, -1) : base;
+}
+
+function generateTempPassword() {
+  const raw = crypto.randomBytes(16).toString("base64url");
+  return raw.slice(0, 16);
+}
+
+export async function addChildAccount(formData: FormData) {
+  const parentId = await requireUserId();
+  const email = normalizeEmail(formData.get("email"));
+  const name = sanitizeName(formData.get("name"));
+
+  if (!email) {
+    throw new Error("メールアドレスを入力してください。");
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw new Error("このメールアドレスは既に登録されています。");
+  }
+
+  const tempPassword = generateTempPassword();
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      parentId,
+      isActive: true,
+      hashedPassword,
+    },
+    select: { id: true },
+  });
+
+  const parent = await prisma.user.findUnique({
+    where: { id: parentId },
+    select: { name: true },
+  });
+
+  const loginUrl = getBaseUrl();
+
+  await sendChildDirectInvite({
+    to: email,
+    childName: name,
+    parentName: parent?.name,
+    loginUrl,
+    tempPassword,
+  });
+
+  revalidatePath("/settings/referrers");
+
+  return { userId: user.id };
 }
 
 export async function deleteChildren(formData: FormData) {

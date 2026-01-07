@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { deleteChildren, updateChildMemo, updateChildrenStatus } from "./actions";
+import { addChildAccount, deleteChildren, updateChildMemo, updateChildrenStatus } from "./actions";
 
 type Child = {
   id: number;
@@ -28,6 +28,11 @@ export default function ReferrersClient({ childAccounts }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const deleteSubmitRef = useRef<HTMLButtonElement>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   useEffect(() => {
     setMemoDrafts(new Map(childAccounts.map((child) => [child.id, child.memo])));
@@ -58,6 +63,32 @@ export default function ReferrersClient({ childAccounts }: Props) {
     if (!formRef.current) return;
     setShowConfirm(false);
     formRef.current.requestSubmit(deleteSubmitRef.current ?? undefined);
+  };
+
+  const handleInvite = async () => {
+    const email = inviteEmail.trim();
+    if (!email || isInviting) return;
+
+    setIsInviting(true);
+    setInviteMessage(null);
+    setInviteError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("name", inviteName.trim());
+
+      await addChildAccount(formData);
+      setInviteMessage("アカウントを作成し、仮パスワードを送信しました。");
+      setInviteEmail("");
+      setInviteName("");
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : "作成に失敗しました";
+      setInviteError(message);
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const handleBulkStatusChange = async (targetStatus: "active" | "inactive") => {
@@ -161,6 +192,36 @@ export default function ReferrersClient({ childAccounts }: Props) {
           <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
             {childAccounts.length} 件
           </span>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/5 p-4 text-sm text-white/80 shadow-inner">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="text"
+              value={inviteName}
+              onChange={(e) => setInviteName(e.target.value)}
+              placeholder="アカウントの名前（任意）"
+              className="min-w-[180px] flex-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white outline-none transition focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40"
+            />
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="アカウントのメールアドレス"
+              className="min-w-[220px] flex-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white outline-none transition focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40"
+            />
+            <button
+              type="button"
+              onClick={handleInvite}
+              disabled={isInviting || !inviteEmail.trim()}
+              className="rounded-full border border-emerald-300/60 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition enabled:hover:border-emerald-200 enabled:hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isInviting ? "送信中..." : "アカウントを追加"}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-white/70">メールアドレス宛に仮パスワードを送付し、アカウントを有効化します。</p>
+          {inviteMessage && <p className="mt-2 text-xs text-emerald-200">{inviteMessage}</p>}
+          {inviteError && <p className="mt-2 text-xs text-red-200">{inviteError}</p>}
         </div>
 
         {childAccounts.length === 0 ? (
