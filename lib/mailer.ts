@@ -197,9 +197,8 @@ export async function sendChildLockNotice(params: ChildLockNoticeParams) {
     `${childLabel} 様`,
     "",
     `メールアドレス: ${childEmail}`,
-    `${parentLabel} 様がアカウントを一時的にロックしました。`,
-    "ログインはできません。必要な場合は管理者へご連絡ください。",
-    loginUrl ? `ログインURL: ${loginUrl}` : "",
+    `${parentLabel} 様がアカウントをロックしました。`,
+    `ログインはできません。必要な場合は ${parentLabel} 様へご連絡ください。`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -207,9 +206,8 @@ export async function sendChildLockNotice(params: ChildLockNoticeParams) {
   const html = `
     <p>${childLabel} 様</p>
     <p>メールアドレス: <strong>${childEmail}</strong></p>
-    <p>${parentLabel} 様がアカウントを一時的にロックしました。</p>
-    <p>ログインはできません。必要な場合は管理者へご連絡ください。</p>
-    ${loginUrl ? `<p>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></p>` : ""}
+    <p>${parentLabel} 様がアカウントをロックしました。</p>
+    <p>ログインはできません。必要な場合は ${parentLabel} 様へご連絡ください。</p>
   `;
 
   await transporter.sendMail({
