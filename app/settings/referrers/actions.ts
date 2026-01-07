@@ -36,3 +36,27 @@ export async function deleteChildren(formData: FormData) {
 
   revalidatePath("/settings/referrers");
 }
+
+export async function updateChildMemo(formData: FormData) {
+  const userId = await requireUserId();
+  const childId = Number(formData.get("childId"));
+  const memoValue = formData.get("memo");
+  const memo = typeof memoValue === "string" ? memoValue.trim() : "";
+
+  if (!Number.isInteger(childId) || childId <= 0) {
+    throw new Error("子アカウントIDが不正です。");
+  }
+
+  const sanitizedMemo = memo.length > 1000 ? memo.slice(0, 1000) : memo;
+
+  const result = await prisma.user.updateMany({
+    where: { id: childId, parentId: userId },
+    data: { memo: sanitizedMemo === "" ? null : sanitizedMemo },
+  });
+
+  if (result.count === 0) {
+    throw new Error("対象の子アカウントが見つかりません。");
+  }
+
+  revalidatePath("/settings/referrers");
+}

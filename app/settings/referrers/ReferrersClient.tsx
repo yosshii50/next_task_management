@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { deleteChildren } from "./actions";
+import { deleteChildren, updateChildMemo } from "./actions";
 
 type Child = {
   id: number;
   name: string | null;
   createdAt: string;
   isActive: boolean;
+  memo: string;
 };
 
 type Props = {
@@ -18,7 +19,19 @@ type Props = {
 export default function ReferrersClient({ childAccounts }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [memoDrafts, setMemoDrafts] = useState<Map<number, string>>(
+    () => new Map(childAccounts.map((child) => [child.id, child.memo]))
+  );
+  const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
+  const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+  const [errorIds, setErrorIds] = useState<Set<number>>(new Set());
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    setMemoDrafts(new Map(childAccounts.map((child) => [child.id, child.memo])));
+    setSavedIds(new Set());
+    setErrorIds(new Set());
+  }, [childAccounts]);
 
   const selectedCount = selectedIds.size;
 
@@ -43,6 +56,69 @@ export default function ReferrersClient({ childAccounts }: Props) {
     if (!formRef.current) return;
     setShowConfirm(false);
     formRef.current.requestSubmit();
+  };
+
+  const handleMemoChange = (id: number, value: string) => {
+    setMemoDrafts((prev) => {
+      const next = new Map(prev);
+      next.set(id, value);
+      return next;
+    });
+    setSavedIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setErrorIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const handleSaveMemo = async (id: number) => {
+    const memo = memoDrafts.get(id) ?? "";
+
+    setSavingIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    setErrorIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+
+    try {
+      const formData = new FormData();
+      formData.append("childId", String(id));
+      formData.append("memo", memo);
+
+      await updateChildMemo(formData);
+
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+    } catch (error) {
+      console.error(error);
+      setErrorIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+    } finally {
+      setSavingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   const selectionInputs = useMemo(
@@ -94,6 +170,7 @@ export default function ReferrersClient({ childAccounts }: Props) {
                     <th className="px-4 py-3 font-semibold">名前</th>
                     <th className="px-4 py-3 font-semibold">登録日時</th>
                     <th className="px-4 py-3 font-semibold">状態</th>
+                    <th className="px-4 py-3 font-semibold">メモ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -122,6 +199,42 @@ export default function ReferrersClient({ childAccounts }: Props) {
                         >
                           {child.isActive ? "有効" : "無効"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-2">
+                          <textarea
+                            value={memoDrafts.get(child.id) ?? ""}
+                            onChange={(event) => handleMemoChange(child.id, event.target.value)}
+                            placeholder="この子アカウントに関するメモ"
+                            maxLength={1000}
+                            rows={3}
+                            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white shadow-inner outline-none transition focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40"
+                          />
+                          <div className="flex items-center justify-between gap-3 text-xs text-white/70">
+                            <span
+                              aria-live="polite"
+                              className={`min-h-[1.25rem] ${
+                                errorIds.has(child.id) ? "text-red-200" : savedIds.has(child.id) ? "text-emerald-200" : ""
+                              }`}
+                            >
+                              {savingIds.has(child.id)
+                                ? "保存中..."
+                                : errorIds.has(child.id)
+                                ? "保存に失敗しました"
+                                : savedIds.has(child.id)
+                                ? "保存しました"
+                                : ""}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveMemo(child.id)}
+                              disabled={savingIds.has(child.id)}
+                              className="rounded-full border border-emerald-300/50 bg-emerald-400/10 px-3 py-1 font-semibold text-emerald-100 transition hover:border-emerald-200 hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {savingIds.has(child.id) ? "保存中..." : "メモを保存"}
+                            </button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}

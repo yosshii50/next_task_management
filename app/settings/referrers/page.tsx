@@ -33,6 +33,7 @@ export default async function ReferrersPage() {
       name: true,
       createdAt: true,
       isActive: true,
+      memo: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -48,6 +49,7 @@ export default async function ReferrersPage() {
     name: child.name,
     createdAt: formatter.format(child.createdAt),
     isActive: child.isActive,
+    memo: child.memo ?? "",
   }));
 
   return (
