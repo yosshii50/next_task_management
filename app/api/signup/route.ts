@@ -68,6 +68,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "親アカウントにメールアドレスが設定されていないため、承認メールを送信できません。" }, { status: 422 });
   }
 
+  const userCount = await prisma.user.count();
+
+  if (userCount > 100) {
+    return NextResponse.json(
+      { error: "現在一時的に新規アカウントの受付を中止しています。" },
+      { status: 403 },
+    );
+  }
+
   const tempPassword = generateTempPassword();
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
