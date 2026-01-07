@@ -7,7 +7,6 @@ import { deleteChildren } from "./actions";
 type Child = {
   id: number;
   name: string | null;
-  email: string | null;
   createdAt: string;
   isActive: boolean;
 };
@@ -60,7 +59,7 @@ export default function ReferrersClient({ childAccounts }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">子アカウント一覧</h2>
-            <p className="mt-2 text-sm text-white/70">承認状況や連絡先をここで確認・整理できます。</p>
+            <p className="mt-2 text-sm text-white/70">承認状況をここで確認・整理できます。</p>
           </div>
           <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
             {childAccounts.length} 件
@@ -93,8 +92,7 @@ export default function ReferrersClient({ childAccounts }: Props) {
                       <span className="sr-only">選択</span>
                     </th>
                     <th className="px-4 py-3 font-semibold">名前</th>
-                    <th className="px-4 py-3 font-semibold">メールアドレス</th>
-                    <th className="px-4 py-3 font-semibold">登録日</th>
+                    <th className="px-4 py-3 font-semibold">登録日時</th>
                     <th className="px-4 py-3 font-semibold">状態</th>
                   </tr>
                 </thead>
@@ -113,7 +111,6 @@ export default function ReferrersClient({ childAccounts }: Props) {
                         </label>
                       </td>
                       <td className="px-4 py-3 font-semibold text-white">{child.name || "未設定"}</td>
-                      <td className="px-4 py-3 text-white/80">{child.email ?? "未登録"}</td>
                       <td className="px-4 py-3 text-white/70">{child.createdAt}</td>
                       <td className="px-4 py-3">
                         <span

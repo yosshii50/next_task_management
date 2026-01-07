@@ -23,18 +23,22 @@ export default async function ReferrersPage() {
     select: {
       id: true,
       name: true,
-      email: true,
       createdAt: true,
       isActive: true,
     },
     orderBy: { createdAt: "desc" },
   });
 
+  const formatter = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
   const clientChildAccounts = childAccounts.map((child) => ({
     id: child.id,
     name: child.name,
-    email: child.email,
-    createdAt: child.createdAt.toISOString().slice(0, 10),
+    createdAt: formatter.format(child.createdAt),
     isActive: child.isActive,
   }));
 
