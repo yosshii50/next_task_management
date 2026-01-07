@@ -69,9 +69,9 @@ export default function LoginForm() {
             <label className="font-medium text-white/80" htmlFor="password">
               パスワード
             </label>
-            <a className="text-white/60 hover:text-white" href="#">
+            <Link className="text-white/60 hover:text-white" href="/reset">
               パスワードをお忘れですか？
-            </a>
+            </Link>
           </div>
           <input
             id="password"

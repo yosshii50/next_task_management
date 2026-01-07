@@ -59,6 +59,7 @@ model User {
   parent   User?    @relation("UserParent", fields: [parentId], references: [id], onDelete: SetNull)
   children User[]   @relation("UserParent")
   activationTokens ActivationToken[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model VerificationToken {
@@ -116,6 +117,18 @@ model Holiday {
 }
 
 model ActivationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
   id        Int      @id @default(autoincrement())
   userId    Int
   tokenHash String   @unique

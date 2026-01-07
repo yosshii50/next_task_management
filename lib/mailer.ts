@@ -39,6 +39,13 @@ type ChildDirectInviteParams = {
   tempPassword: string;
 };
 
+type PasswordResetMailParams = {
+  to: string;
+  userName?: string | null;
+  resetUrl: string;
+  expiresAt: Date;
+};
+
 function ensureMailerConfig() {
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
@@ -249,6 +256,41 @@ export async function sendChildDirectInvite(params: ChildDirectInviteParams) {
       ${loginUrl ? `<li>ログインURL: <a href="${loginUrl}" target="_blank" rel="noopener noreferrer">${loginUrl}</a></li>` : ""}
     </ul>
     <p>ログイン後、パスワードの変更をおすすめします。</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function sendPasswordResetEmail(params: PasswordResetMailParams) {
+  const { transporter, from } = ensureMailerConfig();
+  const userLabel = params.userName?.trim() || "ご担当者様";
+
+  const subject = "【FlowBase】パスワード再設定のご案内";
+
+  const text = [
+    `${userLabel}`,
+    "",
+    "パスワードの再設定リクエストを受け付けました。",
+    "以下のリンクから新しいパスワードを設定してください。",
+    params.resetUrl,
+    "",
+    `有効期限: ${params.expiresAt.toLocaleString("ja-JP")}`,
+    "本メールに心当たりがない場合は、このまま破棄してください。",
+  ].join("\n");
+
+  const html = `
+    <p>${userLabel}</p>
+    <p>パスワードの再設定リクエストを受け付けました。</p>
+    <p>以下のリンクから新しいパスワードを設定してください。</p>
+    <p><a href="${params.resetUrl}" target="_blank" rel="noopener noreferrer">パスワードを再設定する</a></p>
+    <p>有効期限: ${params.expiresAt.toLocaleString("ja-JP")}</p>
+    <p>本メールに心当たりがない場合は、このまま破棄してください。</p>
   `;
 
   await transporter.sendMail({
