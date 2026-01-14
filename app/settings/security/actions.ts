@@ -91,3 +91,50 @@ export async function changePassword(formData: FormData) {
 
   return { success: true };
 }
+
+export async function deleteAccount(formData: FormData) {
+  const userId = await requireUserId();
+  const password = normalizePassword(formData.get("password"));
+  const confirmation = normalizePassword(formData.get("confirmation"));
+
+  if (!password) {
+    throw new Error("パスワードを入力してください。");
+  }
+
+  if (confirmation !== "削除します") {
+    throw new Error("確認欄に「削除します」と入力してください。");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { hashedPassword: true, isActive: true },
+  });
+
+  if (!user) {
+    throw new Error("ユーザー情報を取得できませんでした。");
+  }
+
+  if (!user.isActive) {
+    throw new Error("このアカウントは無効化されています。");
+  }
+
+  if (!user.hashedPassword) {
+    throw new Error("このアカウントではパスワードによる確認が行えません。サポートへお問い合わせください。");
+  }
+
+  const isValid = await bcrypt.compare(password, user.hashedPassword);
+
+  if (!isValid) {
+    throw new Error("パスワードが正しくありません。");
+  }
+
+  await prisma.user.delete({
+    where: { id: userId },
+  });
+
+  revalidatePath("/settings/security");
+  revalidatePath("/settings");
+  revalidatePath("/dashboard");
+
+  return { success: true };
+}

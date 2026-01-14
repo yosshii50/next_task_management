@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
 import ChangePasswordForm from "./ChangePasswordForm";
+import DeleteAccountForm from "./DeleteAccountForm";
 
 export default async function SecuritySettingsPage() {
   const session = await getServerSession(authOptions);
@@ -51,6 +52,17 @@ export default async function SecuritySettingsPage() {
               <li>英大文字・小文字・数字・記号を組み合わせると強度が高まります。</li>
               <li>他サービスと同じパスワードの使い回しは避けましょう。</li>
             </ul>
+          </div>
+
+          <div className="rounded-3xl border border-red-300/20 bg-red-500/5 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-white">アカウントを削除</h2>
+              <p className="mt-2 text-sm text-white/70">
+                すべてのデータを削除してアカウントを閉鎖します。操作は元に戻せませんので、内容をよくご確認のうえ実行してください。
+              </p>
+            </div>
+
+            <DeleteAccountForm />
           </div>
         </section>
       </div>
