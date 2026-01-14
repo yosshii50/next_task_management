@@ -28,7 +28,7 @@ function parseStatus(value: string | null): TaskStatus {
   return TaskStatus.TODO;
 }
 
-function parseDueDate(value: string | null) {
+function parseDate(value: string | null) {
   if (!value) {
     return null;
   }
@@ -43,6 +43,7 @@ export async function createTask(formData: FormData) {
   const title = formData.get("title")?.toString().trim();
   const description = formData.get("description")?.toString().trim() || null;
   const statusValue = formData.get("status")?.toString() ?? null;
+  const startDateValue = formData.get("startDate")?.toString() ?? null;
   const dueDateValue = formData.get("dueDate")?.toString() ?? null;
 
   if (!title) {
@@ -54,7 +55,8 @@ export async function createTask(formData: FormData) {
       title,
       description,
       status: parseStatus(statusValue),
-      dueDate: parseDueDate(dueDateValue),
+      startDate: parseDate(startDateValue),
+      dueDate: parseDate(dueDateValue),
       userId,
     },
   });
@@ -69,6 +71,7 @@ export async function updateTask(formData: FormData) {
   const title = formData.get("title")?.toString().trim();
   const description = formData.get("description")?.toString().trim() || null;
   const statusValue = formData.get("status")?.toString() ?? null;
+  const startDateValue = formData.get("startDate")?.toString() ?? null;
   const dueDateValue = formData.get("dueDate")?.toString() ?? null;
 
   if (!taskId || !title) {
@@ -84,7 +87,8 @@ export async function updateTask(formData: FormData) {
       title,
       description,
       status: parseStatus(statusValue),
-      dueDate: parseDueDate(dueDateValue),
+      startDate: parseDate(startDateValue),
+      dueDate: parseDate(dueDateValue),
     },
   });
 

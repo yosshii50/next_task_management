@@ -96,7 +96,7 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
               <div>
                 <p className="text-sm font-medium text-white">{task.title}</p>
                 <p className="text-xs text-white/40">
-                  ステータス: {statusMap[task.status] ?? task.status} / 期限: {task.dueDate ?? "未設定"}
+                  ステータス: {statusMap[task.status] ?? task.status} / 開始: {task.startDate ?? "未設定"} / 期限: {task.dueDate ?? "未設定"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -157,7 +157,7 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
                   className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-sm text-white/80" htmlFor="modal-status">
                     ステータス
@@ -174,6 +174,18 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-white/80" htmlFor="modal-startDate">
+                    開始日
+                  </label>
+                  <input
+                    id="modal-startDate"
+                    name="startDate"
+                    type="date"
+                    defaultValue={modalState.type === "edit" ? modalState.task.startDate ?? "" : ""}
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white focus:border-emerald-300 focus:outline-none"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-white/80" htmlFor="modal-dueDate">

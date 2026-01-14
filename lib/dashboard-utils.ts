@@ -57,12 +57,15 @@ export function sortTasksByDueDate<T extends { dueDate: Date | null; title: stri
   });
 }
 
-export function mapTasksToClient(tasks: { id: number; title: string; description: string | null; status: TaskStatus; dueDate: Date | null }[]): TaskForClient[] {
+export function mapTasksToClient(
+  tasks: { id: number; title: string; description: string | null; status: TaskStatus; startDate: Date | null; dueDate: Date | null }[]
+): TaskForClient[] {
   return tasks.map((task) => ({
     id: task.id,
     title: task.title,
     description: task.description,
     status: task.status,
+    startDate: task.startDate ? formatDateForInput(task.startDate) : null,
     dueDate: task.dueDate ? formatDateForInput(task.dueDate) : null,
   }));
 }

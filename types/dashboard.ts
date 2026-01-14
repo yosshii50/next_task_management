@@ -5,6 +5,7 @@ export type TaskForClient = {
   title: string;
   description: string | null;
   status: TaskStatus;
+  startDate: string | null;
   dueDate: string | null;
 };
 

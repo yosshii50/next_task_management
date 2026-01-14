@@ -81,6 +81,7 @@ model Task {
   title       String
   description String?
   status      TaskStatus @default(TODO)
+  startDate   DateTime?
   dueDate     DateTime?
   userId      Int
   createdAt   DateTime   @default(now())
