@@ -36,6 +36,11 @@ export default function DatePicker({ id, name, label, defaultValue, placeholder 
   const todayString = useMemo(() => formatDate(new Date()), []);
 
   useEffect(() => {
+    setSelectedDate(initialDate);
+    setCurrentMonth(initialDate ?? new Date());
+  }, [initialDate]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (!popoverRef.current) return;
       if (popoverRef.current.contains(event.target as Node)) return;

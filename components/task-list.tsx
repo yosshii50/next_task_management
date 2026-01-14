@@ -19,14 +19,26 @@ type TaskListProps = {
   onDelete: (formData: FormData) => Promise<void>;
   editTargetId: number | null;
   onEditTargetHandled: () => void;
+  createRequestDate: string | null;
+  onCreateRequestHandled: () => void;
 };
 
 type ModalState =
-  | { type: "create" }
+  | { type: "create"; presetDate: string | null }
   | { type: "edit"; task: TaskForClient }
   | null;
 
-export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onDelete, editTargetId, onEditTargetHandled }: TaskListProps) {
+export default function TaskList({
+  tasks,
+  statusOptions,
+  onCreate,
+  onUpdate,
+  onDelete,
+  editTargetId,
+  onEditTargetHandled,
+  createRequestDate,
+  onCreateRequestHandled,
+}: TaskListProps) {
   const [modalState, setModalState] = useState<ModalState>(null);
   const [deleteTarget, setDeleteTarget] = useState<TaskForClient | null>(null);
   const [isSubmitting, startSubmitTransition] = useTransition();
@@ -38,7 +50,7 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
   }
 
   function openCreate() {
-    setModalState({ type: "create" });
+    setModalState({ type: "create", presetDate: null });
   }
 
   function closeModal() {
@@ -92,6 +104,12 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
     }
     onEditTargetHandled();
   }, [editTargetId, tasks, onEditTargetHandled]);
+
+  useEffect(() => {
+    if (!createRequestDate) return;
+    setModalState({ type: "create", presetDate: createRequestDate });
+    onCreateRequestHandled();
+  }, [createRequestDate, onCreateRequestHandled]);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -198,7 +216,11 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
                     id="modal-startDate"
                     name="startDate"
                     label="開始日"
-                    defaultValue={modalState.type === "edit" ? modalState.task.startDate ?? "" : ""}
+                    defaultValue={
+                      modalState.type === "edit"
+                        ? modalState.task.startDate ?? ""
+                        : modalState.presetDate ?? ""
+                    }
                   />
                 </div>
                 <div>
@@ -206,7 +228,11 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
                     id="modal-dueDate"
                     name="dueDate"
                     label="期限"
-                    defaultValue={modalState.type === "edit" ? modalState.task.dueDate ?? "" : ""}
+                    defaultValue={
+                      modalState.type === "edit"
+                        ? modalState.task.dueDate ?? ""
+                        : modalState.presetDate ?? ""
+                    }
                   />
                 </div>
               </div>

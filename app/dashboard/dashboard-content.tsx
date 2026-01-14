@@ -52,6 +52,7 @@ export default function DashboardContent({
     fallbackData: initialData,
   });
   const [editTargetId, setEditTargetId] = useState<number | null>(null);
+  const [createTargetDate, setCreateTargetDate] = useState<string | null>(null);
 
   const calendarDays = useMemo(
     () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
@@ -78,7 +79,12 @@ export default function DashboardContent({
     setEditTargetId(taskId);
   };
 
+  const handleCreateRequest = (date: string) => {
+    setCreateTargetDate(date);
+  };
+
   const clearEditRequest = () => setEditTargetId(null);
+  const clearCreateRequest = () => setCreateTargetDate(null);
 
   return (
     <>
@@ -89,6 +95,7 @@ export default function DashboardContent({
         maxWeeks={maxWeeks}
         daysPerWeek={daysPerWeek}
         onEditTask={handleEditRequest}
+        onCreateTask={handleCreateRequest}
       />
 
       <TaskList
@@ -99,6 +106,8 @@ export default function DashboardContent({
         onDelete={handleDelete}
         editTargetId={editTargetId}
         onEditTargetHandled={clearEditRequest}
+        createRequestDate={createTargetDate}
+        onCreateRequestHandled={clearCreateRequest}
       />
 
       {isLoading && !data && <p className="text-sm text-white/60">データを読み込み中です...</p>}

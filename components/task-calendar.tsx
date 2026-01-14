@@ -12,6 +12,7 @@ type TaskCalendarProps = {
   maxWeeks: number;
   daysPerWeek: number;
   onEditTask: (taskId: number) => void;
+  onCreateTask?: (date: string) => void;
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -28,7 +29,7 @@ const statusLabels: Record<TaskStatus, string> = {
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
-export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, daysPerWeek, onEditTask }: TaskCalendarProps) {
+export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, daysPerWeek, onEditTask, onCreateTask }: TaskCalendarProps) {
   const initialWeeks = Math.min(Math.max(defaultWeeks, minWeeks), maxWeeks);
   const [visibleWeeks, setVisibleWeeks] = useState(initialWeeks);
   const [selectedTask, setSelectedTask] = useState<CalendarTask | null>(null);
@@ -63,6 +64,11 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
     if (!selectedTask) return;
     onEditTask(selectedTask.id);
     closeTaskDetails();
+  };
+
+  const handleDayClick = (date: string) => {
+    if (!onCreateTask) return;
+    onCreateTask(date);
   };
 
   return (
@@ -108,7 +114,16 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
               return (
                 <div
                   key={day.date}
-                  className={`min-h-[110px] rounded-2xl border border-white/10 px-3 py-2 text-sm ${baseClass}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleDayClick(day.date)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleDayClick(day.date);
+                    }
+                  }}
+                  className={`min-h-[110px] rounded-2xl border border-white/10 px-3 py-2 text-sm transition ${baseClass} cursor-pointer hover:border-emerald-300/40 hover:bg-white/10`}
                 >
                   <div className="flex items-center justify-between text-xs text-white">
                     <span>{day.label}</span>
@@ -119,12 +134,15 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
                       <p className="text-[10px] text-white/30">予定なし</p>
                     ) : (
                       day.tasks.slice(0, 2).map((task) => (
-                        <button
-                          key={task.id}
-                          type="button"
-                          onClick={() => openTaskDetails(task)}
-                          className="flex w-full items-center gap-2 rounded-xl border border-transparent px-2 py-1 text-left transition hover:border-emerald-300/40 hover:bg-white/5"
-                        >
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openTaskDetails(task);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-xl border border-transparent px-2 py-1 text-left transition hover:border-emerald-300/40 hover:bg-white/5"
+                      >
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${statusColors[task.status]}`}
                             aria-hidden
