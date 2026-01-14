@@ -11,6 +11,7 @@ type TaskCalendarProps = {
   minWeeks: number;
   maxWeeks: number;
   daysPerWeek: number;
+  onEditTask: (taskId: number) => void;
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -27,7 +28,7 @@ const statusLabels: Record<TaskStatus, string> = {
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
-export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, daysPerWeek }: TaskCalendarProps) {
+export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, daysPerWeek, onEditTask }: TaskCalendarProps) {
   const initialWeeks = Math.min(Math.max(defaultWeeks, minWeeks), maxWeeks);
   const [visibleWeeks, setVisibleWeeks] = useState(initialWeeks);
   const [selectedTask, setSelectedTask] = useState<CalendarTask | null>(null);
@@ -56,6 +57,12 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
 
   const closeTaskDetails = () => {
     setSelectedTask(null);
+  };
+
+  const handleEdit = () => {
+    if (!selectedTask) return;
+    onEditTask(selectedTask.id);
+    closeTaskDetails();
   };
 
   return (
@@ -181,6 +188,15 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
                 <p className="mt-1 whitespace-pre-wrap text-sm text-white/90">
                   {selectedTask.description && selectedTask.description.trim().length > 0 ? selectedTask.description : "詳細は未入力です。"}
                 </p>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  className="rounded-full bg-emerald-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-emerald-300"
+                >
+                  修正
+                </button>
               </div>
             </div>
           </div>

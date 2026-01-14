@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type { TaskStatus } from "@prisma/client";
 
 import type { TaskForClient } from "@/types/dashboard";
@@ -17,6 +17,8 @@ type TaskListProps = {
   onCreate: (formData: FormData) => Promise<void>;
   onUpdate: (formData: FormData) => Promise<void>;
   onDelete: (formData: FormData) => Promise<void>;
+  editTargetId: number | null;
+  onEditTargetHandled: () => void;
 };
 
 type ModalState =
@@ -24,7 +26,7 @@ type ModalState =
   | { type: "edit"; task: TaskForClient }
   | null;
 
-export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onDelete }: TaskListProps) {
+export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onDelete, editTargetId, onEditTargetHandled }: TaskListProps) {
   const [modalState, setModalState] = useState<ModalState>(null);
   const [deleteTarget, setDeleteTarget] = useState<TaskForClient | null>(null);
   const [isSubmitting, startSubmitTransition] = useTransition();
@@ -75,6 +77,15 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
       closeDelete();
     });
   }
+
+  useEffect(() => {
+    if (!editTargetId) return;
+    const target = tasks.find((task) => task.id === editTargetId);
+    if (target) {
+      openEditor(target);
+    }
+    onEditTargetHandled();
+  }, [editTargetId, tasks, onEditTargetHandled]);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">

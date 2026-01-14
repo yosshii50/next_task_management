@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import type { TaskStatus } from "@prisma/client";
 
@@ -51,6 +51,7 @@ export default function DashboardContent({
     refreshInterval: 5000,
     fallbackData: initialData,
   });
+  const [editTargetId, setEditTargetId] = useState<number | null>(null);
 
   const calendarDays = useMemo(
     () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
@@ -73,6 +74,12 @@ export default function DashboardContent({
     await mutate();
   };
 
+  const handleEditRequest = (taskId: number) => {
+    setEditTargetId(taskId);
+  };
+
+  const clearEditRequest = () => setEditTargetId(null);
+
   return (
     <>
       <TaskCalendar
@@ -81,6 +88,7 @@ export default function DashboardContent({
         minWeeks={minWeeks}
         maxWeeks={maxWeeks}
         daysPerWeek={daysPerWeek}
+        onEditTask={handleEditRequest}
       />
 
       <TaskList
@@ -89,6 +97,8 @@ export default function DashboardContent({
         onCreate={handleCreate}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
+        editTargetId={editTargetId}
+        onEditTargetHandled={clearEditRequest}
       />
 
       {isLoading && !data && <p className="text-sm text-white/60">データを読み込み中です...</p>}
