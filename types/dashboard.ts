@@ -12,7 +12,10 @@ export type TaskForClient = {
 export type CalendarTask = {
   id: number;
   title: string;
+  description: string | null;
   status: TaskStatus;
+  startDate: string | null;
+  dueDate: string | null;
 };
 
 export type CalendarDay = {
