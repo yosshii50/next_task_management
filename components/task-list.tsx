@@ -78,6 +78,12 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
     });
   }
 
+  const openDeleteFromEdit = () => {
+    if (modalState?.type !== "edit") return;
+    setDeleteTarget(modalState.task);
+    closeModal();
+  };
+
   useEffect(() => {
     if (!editTargetId) return;
     const target = tasks.find((task) => task.id === editTargetId);
@@ -205,6 +211,15 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
                 </div>
               </div>
               <div className="flex justify-end gap-3">
+                {modalState.type === "edit" && (
+                  <button
+                    type="button"
+                    onClick={openDeleteFromEdit}
+                    className="rounded-full border border-rose-300 px-4 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-300/10"
+                  >
+                    削除
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={closeModal}
