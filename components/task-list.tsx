@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import type { TaskStatus } from "@prisma/client";
 
 import type { TaskForClient } from "@/types/dashboard";
+import DatePicker from "./date-picker";
 
 type StatusOption = {
   value: TaskStatus;
@@ -176,27 +177,19 @@ export default function TaskList({ tasks, statusOptions, onCreate, onUpdate, onD
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-white/80" htmlFor="modal-startDate">
-                    開始日
-                  </label>
-                  <input
+                  <DatePicker
                     id="modal-startDate"
                     name="startDate"
-                    type="date"
+                    label="開始日"
                     defaultValue={modalState.type === "edit" ? modalState.task.startDate ?? "" : ""}
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white focus:border-emerald-300 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-white/80" htmlFor="modal-dueDate">
-                    期限
-                  </label>
-                  <input
+                  <DatePicker
                     id="modal-dueDate"
                     name="dueDate"
-                    type="date"
+                    label="期限"
                     defaultValue={modalState.type === "edit" ? modalState.task.dueDate ?? "" : ""}
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white focus:border-emerald-300 focus:outline-none"
                   />
                 </div>
               </div>
