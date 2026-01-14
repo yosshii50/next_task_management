@@ -3,20 +3,7 @@
 import { type ChangeEvent, useMemo, useState } from "react";
 import type { TaskStatus } from "@prisma/client";
 
-type CalendarTask = {
-  id: number;
-  title: string;
-  status: TaskStatus;
-};
-
-type CalendarDay = {
-  date: string;
-  label: string;
-  isToday: boolean;
-  isHoliday: boolean;
-  holidayName?: string;
-  tasks: CalendarTask[];
-};
+import type { CalendarDay } from "@/types/dashboard";
 
 type TaskCalendarProps = {
   days: CalendarDay[];

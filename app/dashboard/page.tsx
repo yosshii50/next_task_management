@@ -3,13 +3,10 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { createTask, deleteTask, updateTask } from "@/app/dashboard/actions";
+import DashboardContent from "@/app/dashboard/dashboard-content";
 import SignOutButton from "@/components/sign-out-button";
-import TaskCalendar from "@/components/task-calendar";
-import TaskList from "@/components/task-list";
 import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-
-const TOKYO_TIMEZONE = "Asia/Tokyo";
+import { getDashboardData } from "@/lib/dashboard-data";
 
 const statusOptions = [
   { value: TaskStatus.TODO, label: "未着手" },
@@ -17,41 +14,9 @@ const statusOptions = [
   { value: TaskStatus.DONE, label: "完了" },
 ];
 
-const formatDateForInput = (date: Date, timeZone: string = TOKYO_TIMEZONE) => {
-  return new Intl.DateTimeFormat("sv-SE", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-};
-
-const getStartOfWeek = (reference: Date) => {
-  const start = new Date(reference);
-  start.setUTCHours(0, 0, 0, 0);
-  const weekday = start.getUTCDay();
-  start.setUTCDate(start.getUTCDate() - weekday);
-  return start;
-};
-
-const getJapanToday = () => {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: TOKYO_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = formatter.formatToParts(new Date());
-  const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "0";
-  const year = Number(getPart("year"));
-  const month = Number(getPart("month"));
-  const day = Number(getPart("day"));
-
-  return new Date(Date.UTC(year, month - 1, day));
-};
-
 const DEFAULT_WEEKS_TO_DISPLAY = 5;
 const MAX_WEEKS_TO_PRELOAD = 8;
+const MIN_WEEKS = 3;
 const DAYS_PER_WEEK = 7;
 
 export default async function DashboardPage() {
@@ -68,87 +33,7 @@ export default async function DashboardPage() {
   }
 
   const displayName = session.user.name ?? session.user.email ?? "メンバー";
-
-  const [tasks, weeklyHoliday, holidays] = await Promise.all([
-    prisma.task.findMany({
-      where: { userId },
-    }),
-    prisma.weeklyHoliday.findUnique({ where: { userId } }),
-    prisma.holiday.findMany({
-      where: { userId },
-    }),
-  ]);
-
-  const sortedTasks = tasks.sort((a, b) => {
-    const aDue = a.dueDate;
-    const bDue = b.dueDate;
-
-    if (!aDue && !bDue) {
-      return a.title.localeCompare(b.title, "ja");
-    }
-
-    if (!aDue) return -1;
-    if (!bDue) return 1;
-
-    if (aDue.getTime() !== bDue.getTime()) {
-      return aDue.getTime() - bDue.getTime();
-    }
-
-    return a.title.localeCompare(b.title, "ja");
-  });
-
-  const weeklyHolidayMap = {
-    0: weeklyHoliday?.sunday ?? false,
-    1: weeklyHoliday?.monday ?? false,
-    2: weeklyHoliday?.tuesday ?? false,
-    3: weeklyHoliday?.wednesday ?? false,
-    4: weeklyHoliday?.thursday ?? false,
-    5: weeklyHoliday?.friday ?? false,
-    6: weeklyHoliday?.saturday ?? false,
-  } as Record<number, boolean>;
-
-  const clientTasks = sortedTasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    status: task.status,
-    dueDate: task.dueDate ? formatDateForInput(task.dueDate) : null,
-  }));
-
-  const tasksByDate = clientTasks.reduce<Record<string, { id: number; title: string; status: TaskStatus }[]>>((acc, task) => {
-    if (!task.dueDate) return acc;
-    acc[task.dueDate] = acc[task.dueDate] ?? [];
-    acc[task.dueDate].push({ id: task.id, title: task.title, status: task.status });
-    return acc;
-  }, {});
-
-  const japanToday = getJapanToday();
-  const todayIso = formatDateForInput(japanToday);
-  const calendarStart = getStartOfWeek(japanToday);
-  const holidayMap = holidays.reduce<Record<string, string>>((acc, holiday) => {
-    const iso = formatDateForInput(holiday.date);
-    acc[iso] = holiday.name;
-    return acc;
-  }, {});
-
-  const calendarDays = Array.from({ length: MAX_WEEKS_TO_PRELOAD * DAYS_PER_WEEK }, (_, index) => {
-    const date = new Date(calendarStart);
-    date.setUTCDate(calendarStart.getUTCDate() + index);
-    const iso = formatDateForInput(date);
-    const weekday = date.getUTCDay();
-    const holidayName = holidayMap[iso];
-    const isHoliday = weeklyHolidayMap[weekday] || Boolean(holidayName);
-    const month = date.getUTCMonth() + 1;
-    const day = date.getUTCDate();
-    return {
-      date: iso,
-      label: `${month}/${day}`,
-      isToday: iso === todayIso,
-      isHoliday,
-      holidayName: holidayName ?? undefined,
-      tasks: tasksByDate[iso] ?? [],
-    };
-  });
+  const initialData = await getDashboardData(userId);
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -176,17 +61,13 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <TaskCalendar
-          days={calendarDays}
+        <DashboardContent
+          statusOptions={statusOptions}
+          initialData={initialData}
           defaultWeeks={DEFAULT_WEEKS_TO_DISPLAY}
-          minWeeks={3}
+          minWeeks={MIN_WEEKS}
           maxWeeks={MAX_WEEKS_TO_PRELOAD}
           daysPerWeek={DAYS_PER_WEEK}
-        />
-
-        <TaskList
-          tasks={clientTasks}
-          statusOptions={statusOptions}
           onCreate={createTask}
           onUpdate={updateTask}
           onDelete={deleteTask}

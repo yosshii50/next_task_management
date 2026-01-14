@@ -3,13 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import type { TaskStatus } from "@prisma/client";
 
-type TaskForClient = {
-  id: number;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  dueDate: string | null;
-};
+import type { TaskForClient } from "@/types/dashboard";
 
 type StatusOption = {
   value: TaskStatus;

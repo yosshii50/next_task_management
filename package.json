@@ -18,16 +18,17 @@
     "next-auth": "^4.24.13",
     "nodemailer": "^7.0.12",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "swr": "^2.3.8"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "prisma": "^6.19.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.33",
     "postcss": "^8",
+    "prisma": "^6.19.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
