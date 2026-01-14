@@ -91,9 +91,23 @@ export function buildCalendarDays(data: DashboardData, maxWeeks: number, daysPer
   }, {});
 
   const tasksByDate = data.tasks.reduce<Record<string, { id: number; title: string; status: TaskStatus }[]>>((acc, task) => {
-    if (!task.dueDate) return acc;
-    acc[task.dueDate] = acc[task.dueDate] ?? [];
-    acc[task.dueDate].push({ id: task.id, title: task.title, status: task.status });
+    const start = task.startDate ? new Date(`${task.startDate}T00:00:00Z`) : null;
+    const end = task.dueDate ? new Date(`${task.dueDate}T00:00:00Z`) : null;
+
+    if (!start && !end) return acc;
+
+    const rangeStart = start ?? end!;
+    const rangeEnd = end ?? start!;
+    const [from, to] = rangeStart.getTime() <= rangeEnd.getTime() ? [rangeStart, rangeEnd] : [rangeEnd, rangeStart];
+
+    const current = new Date(from);
+    while (current.getTime() <= to.getTime()) {
+      const iso = formatDateForInput(current);
+      acc[iso] = acc[iso] ?? [];
+      acc[iso].push({ id: task.id, title: task.title, status: task.status });
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+
     return acc;
   }, {});
 
