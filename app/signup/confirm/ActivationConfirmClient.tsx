@@ -123,9 +123,6 @@ export default function ActivationConfirmPage() {
               <p>
                 氏名: <span className="text-white">{state.user.name || "未設定"}</span>
               </p>
-              <p className="mt-1">
-                メールアドレス: <span className="text-white">{state.user.email || "未設定"}</span>
-              </p>
             </div>
             <button
               onClick={handleApprove}
