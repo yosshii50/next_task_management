@@ -90,7 +90,7 @@ export default function SignupForm() {
           name="name"
           type="text"
           required
-          placeholder="オレだよオレ"
+          placeholder="おなまえ"
           className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
         />
         {showNameInfo && (
