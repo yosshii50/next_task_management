@@ -44,7 +44,7 @@ export default async function DashboardPage() {
             こんにちは、<span className="text-emerald-300">{displayName}</span> さん
           </h1>
           <p className="mt-2 text-white/70">
-            FlowBase へのログインが完了しました。チームの最新プロジェクトや自動化フローをここから管理できます。
+            Next Task へのログインが完了しました。チームの最新プロジェクトや自動化フローをここから管理できます。
           </p>
         </div>
 

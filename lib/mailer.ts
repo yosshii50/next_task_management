@@ -77,7 +77,7 @@ export async function sendParentApprovalEmail(params: ParentApprovalMailParams) 
   const childLabel = params.childName?.trim() || "未設定";
   const parentLabel = params.parentName?.trim() || "ご担当者様";
 
-  const subject = "【FlowBase】新規アカウント有効化のご確認";
+  const subject = "【Next Task】新規アカウント有効化のご確認";
 
   const text = [
     `${parentLabel}`,
@@ -118,7 +118,7 @@ export async function sendChildSignupNotice(params: ChildSignupNoticeParams) {
   const loginUrl = params.loginUrl || "";
   const childEmail = params.to;
 
-  const subject = "【FlowBase】ご登録を受け付けました（承認待ち）";
+  const subject = "【Next Task】ご登録を受け付けました（承認待ち）";
 
   const text = [
     `${childLabel} 様`,
@@ -160,7 +160,7 @@ export async function sendChildActivationNotice(params: ChildActivationNoticePar
   const loginUrl = params.loginUrl || "";
   const childEmail = params.to;
 
-  const subject = "【FlowBase】アカウントが有効化されました";
+  const subject = "【Next Task】アカウントが有効化されました";
 
   const text = [
     `${childLabel} 様`,
@@ -197,7 +197,7 @@ export async function sendChildLockNotice(params: ChildLockNoticeParams) {
   const parentLabel = params.parentName?.trim() || "管理者";
   const childEmail = params.to;
 
-  const subject = "【FlowBase】アカウントがロックされました";
+  const subject = "【Next Task】アカウントがロックされました";
 
   const text = [
     `${childLabel} 様`,
@@ -232,7 +232,7 @@ export async function sendChildDirectInvite(params: ChildDirectInviteParams) {
   const loginUrl = params.loginUrl || "";
   const childEmail = params.to;
 
-  const subject = "【FlowBase】アカウントが作成されました";
+  const subject = "【Next Task】アカウントが作成されました";
 
   const text = [
     `${childLabel} 様`,
@@ -271,7 +271,7 @@ export async function sendPasswordResetEmail(params: PasswordResetMailParams) {
   const { transporter, from } = ensureMailerConfig();
   const userLabel = params.userName?.trim() || "ご担当者様";
 
-  const subject = "【FlowBase】パスワード再設定のご案内";
+  const subject = "【Next Task】パスワード再設定のご案内";
 
   const text = [
     `${userLabel}`,

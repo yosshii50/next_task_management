@@ -4,11 +4,11 @@ import SignupForm from "@/components/signup-form";
 const highlights = [
   { title: "導入サポート", body: "専任チームが要件定義から設計、初期設定まで伴走します。" },
   { title: "セキュリティ標準", body: "SOC2 / ISO27001に準拠した国内データセンターにて運用。" },
-  { title: "AIワークフロー", body: "Flow AIが業務フローを自動提案し、改善サイクルを加速。" },
+  { title: "AIワークフロー", body: "Next Taskが業務フローを自動提案し、改善サイクルを加速。" },
 ];
 
 export const metadata = {
-  title: "FlowBase | 新規登録",
+  title: "Next Task | 新規登録",
 };
 
 export default function SignupPage() {
@@ -25,7 +25,7 @@ export default function SignupPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
             </p>
             <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
-              FlowBaseへのご登録
+              Next Taskへのご登録
             </h1>
             <p className="text-base text-white/70">
               チームの課題や導入目的を共有いただくことで、最適なプランとオンボーディングを提案します。フォーム送信後、担当より詳細のご案内を差し上げます。
@@ -64,7 +64,7 @@ export default function SignupPage() {
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-300">Customer Voice</p>
             <p className="text-2xl font-semibold text-white">「業務プロセス改善のスピードが2倍に」</p>
             <p className="text-base text-white/70">
-              FlowBase導入により、各部門が自律的にワークフローを更新できるようになりました。統制とスピードを両立できる唯一のプラットフォームです。
+              Next Task導入により、各部門が自律的にワークフローを更新できるようになりました。統制とスピードを両立できる唯一のプラットフォームです。
             </p>
             <p className="text-sm text-white/60">DX推進部 部長 / Forward Solutions</p>
           </div>
