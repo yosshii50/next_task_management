@@ -16,9 +16,9 @@ type TaskCalendarProps = {
 };
 
 const statusColors: Record<TaskStatus, string> = {
-  TODO: "bg-slate-500",
+  TODO: "bg-emerald-400",
   IN_PROGRESS: "bg-amber-400",
-  DONE: "bg-emerald-400",
+  DONE: "bg-slate-400",
 };
 
 const statusLabels: Record<TaskStatus, string> = {

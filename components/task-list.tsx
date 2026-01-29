@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import type { TaskStatus } from "@prisma/client";
 
 import type { TaskForClient } from "@/types/dashboard";
+import { formatDateForInput, getJapanToday } from "@/lib/dashboard-utils";
 import DatePicker from "./date-picker";
 
 type StatusOption = {
@@ -44,13 +45,14 @@ export default function TaskList({
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const statusMap = useMemo(() => Object.fromEntries(statusOptions.map((option) => [option.value, option.label])), [statusOptions]);
+  const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
 
   function openEditor(task: TaskForClient) {
     setModalState({ type: "edit", task });
   }
 
   function openCreate() {
-    setModalState({ type: "create", presetDate: null });
+    setModalState({ type: "create", presetDate: todayIso });
   }
 
   function closeModal() {
