@@ -7,6 +7,8 @@ export type TaskForClient = {
   status: TaskStatus;
   startDate: string | null;
   dueDate: string | null;
+  childTaskIds: number[];
+  parentTaskIds: number[];
 };
 
 export type CalendarTask = {

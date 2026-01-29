@@ -6,6 +6,14 @@ export async function getDashboardData(userId: number): Promise<DashboardData> {
   const [tasks, weeklyHoliday, holidays] = await Promise.all([
     prisma.task.findMany({
       where: { userId },
+      include: {
+        childRelations: {
+          select: { childId: true },
+        },
+        parentRelations: {
+          select: { parentId: true },
+        },
+      },
     }),
     prisma.weeklyHoliday.findUnique({ where: { userId } }),
     prisma.holiday.findMany({

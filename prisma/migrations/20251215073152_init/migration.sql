@@ -57,6 +57,7 @@ CREATE TABLE "Task" (
     "title" TEXT NOT NULL,
     "description" TEXT,
     "status" "TaskStatus" NOT NULL DEFAULT 'TODO',
+    "startDate" TIMESTAMP(3),
     "dueDate" TIMESTAMP(3),
     "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

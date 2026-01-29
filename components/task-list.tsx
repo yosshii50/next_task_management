@@ -42,10 +42,21 @@ export default function TaskList({
 }: TaskListProps) {
   const [modalState, setModalState] = useState<ModalState>(null);
   const [deleteTarget, setDeleteTarget] = useState<TaskForClient | null>(null);
+  const [childTaskIds, setChildTaskIds] = useState<number[]>([]);
+  const [childSelectValue, setChildSelectValue] = useState("");
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const statusMap = useMemo(() => Object.fromEntries(statusOptions.map((option) => [option.value, option.label])), [statusOptions]);
   const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
+  const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
+  const selectedChildTasks = useMemo(
+    () => childTaskIds.map((id) => taskMap.get(id)).filter((task): task is TaskForClient => Boolean(task)),
+    [childTaskIds, taskMap]
+  );
+  const availableChildOptions = useMemo(() => {
+    if (!modalState || modalState.type !== "edit") return [];
+    return tasks.filter((task) => task.id !== modalState.task.id && !childTaskIds.includes(task.id));
+  }, [childTaskIds, modalState, tasks]);
 
   function openEditor(task: TaskForClient) {
     setModalState({ type: "edit", task });
@@ -65,6 +76,7 @@ export default function TaskList({
     startSubmitTransition(async () => {
       if (modalState.type === "edit") {
         formData.set("taskId", modalState.task.id.toString());
+        childTaskIds.forEach((childId) => formData.append("childTaskIds", childId.toString()));
         await onUpdate(formData);
       } else {
         await onCreate(formData);
@@ -97,6 +109,27 @@ export default function TaskList({
     setDeleteTarget(modalState.task);
     closeModal();
   };
+
+  function addChildTask() {
+    if (!childSelectValue) return;
+    const parsed = Number(childSelectValue);
+    if (!Number.isInteger(parsed) || parsed <= 0 || childTaskIds.includes(parsed)) return;
+    setChildTaskIds((prev) => [...prev, parsed]);
+    setChildSelectValue("");
+  }
+
+  function removeChildTask(childId: number) {
+    setChildTaskIds((prev) => prev.filter((id) => id !== childId));
+  }
+
+  useEffect(() => {
+    if (modalState?.type === "edit") {
+      setChildTaskIds(modalState.task.childTaskIds ?? []);
+    } else {
+      setChildTaskIds([]);
+    }
+    setChildSelectValue("");
+  }, [modalState]);
 
   useEffect(() => {
     if (!editTargetId) return;
@@ -238,6 +271,61 @@ export default function TaskList({
                   />
                 </div>
               </div>
+              {modalState.type === "edit" && (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">子タスク</p>
+                    <p className="text-xs text-white/60">既存のタスクを紐付けて階層化できます。</p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectedChildTasks.length === 0 ? (
+                      <span className="rounded-full border border-dashed border-white/20 px-3 py-1 text-xs text-white/50">
+                        まだ子タスクがありません
+                      </span>
+                    ) : (
+                      selectedChildTasks.map((child) => (
+                        <span
+                          key={child.id}
+                          className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white"
+                        >
+                          <span className="font-semibold">{child.title}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeChildTask(child.id)}
+                            className="rounded-full bg-white/10 px-2 py-1 text-[10px] text-white transition hover:bg-white/20"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      value={childSelectValue}
+                      onChange={(event) => setChildSelectValue(event.target.value)}
+                      className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-2 text-sm text-white focus:border-emerald-300 focus:outline-none sm:max-w-xs"
+                    >
+                      <option value="" className="bg-slate-900 text-white">
+                        子タスク候補を選択
+                      </option>
+                      {availableChildOptions.map((task) => (
+                        <option key={task.id} value={task.id} className="bg-slate-900 text-white">
+                          {task.title}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={addChildTask}
+                      disabled={!childSelectValue}
+                      className="rounded-full border border-emerald-300 px-4 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-300/10 disabled:opacity-60"
+                    >
+                      子タスクを追加
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end gap-3">
                 {modalState.type === "edit" && (
                   <button

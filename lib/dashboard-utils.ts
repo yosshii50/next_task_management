@@ -58,7 +58,16 @@ export function sortTasksByDueDate<T extends { dueDate: Date | null; title: stri
 }
 
 export function mapTasksToClient(
-  tasks: { id: number; title: string; description: string | null; status: TaskStatus; startDate: Date | null; dueDate: Date | null }[]
+  tasks: {
+    id: number;
+    title: string;
+    description: string | null;
+    status: TaskStatus;
+    startDate: Date | null;
+    dueDate: Date | null;
+    childRelations?: { childId: number }[];
+    parentRelations?: { parentId: number }[];
+  }[]
 ): TaskForClient[] {
   return tasks.map((task) => ({
     id: task.id,
@@ -67,6 +76,8 @@ export function mapTasksToClient(
     status: task.status,
     startDate: task.startDate ? formatDateForInput(task.startDate) : null,
     dueDate: task.dueDate ? formatDateForInput(task.dueDate) : null,
+    childTaskIds: Array.from(new Set(task.childRelations?.map((relation) => relation.childId) ?? [])),
+    parentTaskIds: Array.from(new Set(task.parentRelations?.map((relation) => relation.parentId) ?? [])),
   }));
 }
 
