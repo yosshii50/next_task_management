@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import useSWR from "swr";
 import type { TaskStatus } from "@prisma/client";
 
 import TaskCalendar from "@/components/task-calendar";
+import DatePicker from "@/components/date-picker";
 import TaskEditModal from "@/components/task-edit-modal";
-import { buildCalendarDays } from "@/lib/dashboard-utils";
+import { buildCalendarDays, formatDateForInput, getJapanToday } from "@/lib/dashboard-utils";
 import type { DashboardData, TaskForClient } from "@/types/dashboard";
 
 type StatusOption = {
@@ -21,6 +22,7 @@ type DashboardContentProps = {
   minWeeks: number;
   maxWeeks: number;
   daysPerWeek: number;
+  onCreate: (formData: FormData) => Promise<void>;
   onUpdate: (formData: FormData) => Promise<void>;
   onDelete: (formData: FormData) => Promise<void>;
 };
@@ -48,6 +50,7 @@ export default function DashboardContent({
   minWeeks,
   maxWeeks,
   daysPerWeek,
+  onCreate,
   onUpdate,
   onDelete,
 }: DashboardContentProps) {
@@ -57,6 +60,10 @@ export default function DashboardContent({
   });
   const tasks = data?.tasks ?? initialData.tasks;
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [presetDate, setPresetDate] = useState<string | null>(null);
+  const [isCreating, startCreatingTransition] = useTransition();
+  const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
 
   const calendarDays = useMemo(
     () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
@@ -98,9 +105,27 @@ export default function DashboardContent({
     setEditingTaskId(null);
   };
 
+  const openCreate = (date?: string) => {
+    setPresetDate(date ?? todayIso);
+    setIsCreateOpen(true);
+  };
+
+  const closeCreate = () => {
+    setIsCreateOpen(false);
+    setPresetDate(null);
+  };
+
   const handleUpdate = async (formData: FormData) => {
     await onUpdate(formData);
     await mutate();
+  };
+
+  const handleCreate = (formData: FormData) => {
+    startCreatingTransition(async () => {
+      await onCreate(formData);
+      await mutate();
+      closeCreate();
+    });
   };
 
   const handleDelete = async (formData: FormData) => {
@@ -117,10 +142,7 @@ export default function DashboardContent({
         maxWeeks={maxWeeks}
         daysPerWeek={daysPerWeek}
         onEditTask={openEdit}
-        onCreateTask={(date) => {
-          const params = new URLSearchParams({ date });
-          window.location.href = `/tasks?${params.toString()}`;
-        }}
+        onCreateTask={(date) => openCreate(date)}
       />
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -130,9 +152,18 @@ export default function DashboardContent({
             <h2 className="text-2xl font-semibold text-white">今日のタスク</h2>
             <p className="text-sm text-white/60">本日の予定をカレンダーのすぐ下で確認できます。</p>
           </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
-            {sortedTodayTasks.length} 件
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openCreate(todayIso)}
+              className="rounded-full bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-emerald-300"
+            >
+              追加
+            </button>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
+              {sortedTodayTasks.length} 件
+            </span>
+          </div>
         </div>
 
         {sortedTodayTasks.length === 0 ? (
@@ -169,7 +200,7 @@ export default function DashboardContent({
       </section>
 
       {isLoading && !data && <p className="text-sm text-white/60">データを読み込み中です...</p>}
-          {error && <p className="text-sm text-rose-300">最新データの取得に失敗しました。時間をおいて再度お試しください。</p>}
+      {error && <p className="text-sm text-rose-300">最新データの取得に失敗しました。時間をおいて再度お試しください。</p>}
 
       {editingTask && (
         <TaskEditModal
@@ -180,6 +211,86 @@ export default function DashboardContent({
           onDelete={handleDelete}
           onClose={closeEdit}
         />
+      )}
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-950 p-6 text-white shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">今日のタスクを追加</h3>
+              <button onClick={closeCreate} className="text-sm text-white/60 hover:text-white">
+                閉じる
+              </button>
+            </div>
+            <form action={handleCreate} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm text-white/80" htmlFor="dashboard-create-title">
+                  タイトル
+                </label>
+                <input
+                  id="dashboard-create-title"
+                  name="title"
+                  required
+                  className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
+                  placeholder="例: デイリースタンドアップの準備"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-white/80" htmlFor="dashboard-create-description">
+                  詳細
+                </label>
+                <textarea
+                  id="dashboard-create-description"
+                  name="description"
+                  rows={3}
+                  className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
+                  placeholder="メモや共有事項があれば記載してください"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-sm text-white/80" htmlFor="dashboard-create-status">
+                    ステータス
+                  </label>
+                  <select
+                    id="dashboard-create-status"
+                    name="status"
+                    defaultValue="TODO"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white focus:border-emerald-300 focus:outline-none"
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value} className="bg-slate-900 text-white">
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <DatePicker id="dashboard-create-startDate" name="startDate" label="開始日" defaultValue={presetDate ?? todayIso} />
+                </div>
+                <div>
+                  <DatePicker id="dashboard-create-dueDate" name="dueDate" label="期限" defaultValue={presetDate ?? todayIso} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeCreate}
+                  className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-white/40"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="rounded-full bg-emerald-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-60"
+                >
+                  {isCreating ? "作成中..." : "追加"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );
