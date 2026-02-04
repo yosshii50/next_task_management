@@ -2,7 +2,6 @@ import { TaskStatus } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
-import { createTask, deleteTask, updateTask } from "@/app/dashboard/actions";
 import DashboardContent from "@/app/dashboard/dashboard-content";
 import SignOutButton from "@/components/sign-out-button";
 import { authOptions } from "@/lib/auth";
@@ -57,6 +56,12 @@ export default async function DashboardPage() {
             >
               設定
             </a>
+            <a
+              href="/tasks"
+              className="rounded-full border border-emerald-300 px-4 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-300/10"
+            >
+              タスク管理へ
+            </a>
             <SignOutButton />
           </div>
         </div>
@@ -68,9 +73,6 @@ export default async function DashboardPage() {
           minWeeks={MIN_WEEKS}
           maxWeeks={MAX_WEEKS_TO_PRELOAD}
           daysPerWeek={DAYS_PER_WEEK}
-          onCreate={createTask}
-          onUpdate={updateTask}
-          onDelete={deleteTask}
         />
       </div>
     </div>

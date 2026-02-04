@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import type { TaskStatus } from "@prisma/client";
 
 import TaskCalendar from "@/components/task-calendar";
-import TaskList from "@/components/task-list";
 import { buildCalendarDays } from "@/lib/dashboard-utils";
 import type { DashboardData } from "@/types/dashboard";
 
@@ -21,9 +21,6 @@ type DashboardContentProps = {
   minWeeks: number;
   maxWeeks: number;
   daysPerWeek: number;
-  onCreate: (formData: FormData) => Promise<void>;
-  onUpdate: (formData: FormData) => Promise<void>;
-  onDelete: (formData: FormData) => Promise<void>;
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -49,27 +46,25 @@ export default function DashboardContent({
   minWeeks,
   maxWeeks,
   daysPerWeek,
-  onCreate,
-  onUpdate,
-  onDelete,
 }: DashboardContentProps) {
-  const { data, error, isLoading, mutate } = useSWR<DashboardData>("/api/dashboard", fetcher, {
+  const router = useRouter();
+  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
     refreshInterval: 5000,
     fallbackData: initialData,
   });
-  const [editTargetId, setEditTargetId] = useState<number | null>(null);
-  const [createTargetDate, setCreateTargetDate] = useState<string | null>(null);
 
   const calendarDays = useMemo(
     () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
     [data, maxWeeks, daysPerWeek]
   );
-  const tasks = data?.tasks ?? [];
   const statusLabelMap = useMemo(
     () => Object.fromEntries(statusOptions.map((option) => [option.value, option.label])),
     [statusOptions]
   );
-  const todayTasks = useMemo(() => calendarDays.find((day) => day.isToday)?.tasks ?? [], [calendarDays]);
+  const todayTasks = useMemo(
+    () => calendarDays.find((day) => day.isToday)?.tasks ?? [],
+    [calendarDays]
+  );
   const sortedTodayTasks = useMemo(() => {
     const statusOrder: TaskStatus[] = ["IN_PROGRESS", "TODO", "DONE"];
     const statusRank = statusOrder.reduce<Record<TaskStatus, number>>((acc, status, index) => {
@@ -89,32 +84,6 @@ export default function DashboardContent({
     });
   }, [todayTasks]);
 
-  const handleCreate = async (formData: FormData) => {
-    await onCreate(formData);
-    await mutate();
-  };
-
-  const handleUpdate = async (formData: FormData) => {
-    await onUpdate(formData);
-    await mutate();
-  };
-
-  const handleDelete = async (formData: FormData) => {
-    await onDelete(formData);
-    await mutate();
-  };
-
-  const handleEditRequest = (taskId: number) => {
-    setEditTargetId(taskId);
-  };
-
-  const handleCreateRequest = (date: string) => {
-    setCreateTargetDate(date);
-  };
-
-  const clearEditRequest = () => setEditTargetId(null);
-  const clearCreateRequest = () => setCreateTargetDate(null);
-
   return (
     <>
       <TaskCalendar
@@ -123,8 +92,8 @@ export default function DashboardContent({
         minWeeks={minWeeks}
         maxWeeks={maxWeeks}
         daysPerWeek={daysPerWeek}
-        onEditTask={handleEditRequest}
-        onCreateTask={handleCreateRequest}
+        onEditTask={() => router.push("/tasks")}
+        onCreateTask={(date) => router.push(`/tasks?date=${date}`)}
       />
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -163,33 +132,20 @@ export default function DashboardContent({
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleEditRequest(task.id)}
+                <a
+                  href="/tasks"
                   className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
                 >
-                  編集
-                </button>
+                  管理へ
+                </a>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <TaskList
-        tasks={tasks}
-        statusOptions={statusOptions}
-        onCreate={handleCreate}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-        editTargetId={editTargetId}
-        onEditTargetHandled={clearEditRequest}
-        createRequestDate={createTargetDate}
-        onCreateRequestHandled={clearCreateRequest}
-      />
-
       {isLoading && !data && <p className="text-sm text-white/60">データを読み込み中です...</p>}
-      {error && <p className="text-sm text-rose-300">最新データの取得に失敗しました。時間をおいて再度お試しください。</p>}
+          {error && <p className="text-sm text-rose-300">最新データの取得に失敗しました。時間をおいて再度お試しください。</p>}
     </>
   );
 }
