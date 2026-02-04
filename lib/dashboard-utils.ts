@@ -63,6 +63,7 @@ export function mapTasksToClient(
     title: string;
     description: string | null;
     status: TaskStatus;
+    createdAt: Date;
     startDate: Date | null;
     dueDate: Date | null;
     childRelations?: { childId: number }[];
@@ -74,6 +75,7 @@ export function mapTasksToClient(
     title: task.title,
     description: task.description,
     status: task.status,
+    createdAt: task.createdAt.toISOString(),
     startDate: task.startDate ? formatDateForInput(task.startDate) : null,
     dueDate: task.dueDate ? formatDateForInput(task.dueDate) : null,
     childTaskIds: Array.from(new Set(task.childRelations?.map((relation) => relation.childId) ?? [])),
@@ -120,6 +122,7 @@ export function buildCalendarDays(data: DashboardData, maxWeeks: number, daysPer
         title: task.title,
         description: task.description,
         status: task.status,
+        createdAt: task.createdAt,
         startDate: task.startDate,
         dueDate: task.dueDate,
       });

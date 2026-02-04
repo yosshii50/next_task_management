@@ -70,6 +70,24 @@ export default function DashboardContent({
     [statusOptions]
   );
   const todayTasks = useMemo(() => calendarDays.find((day) => day.isToday)?.tasks ?? [], [calendarDays]);
+  const sortedTodayTasks = useMemo(() => {
+    const statusOrder: TaskStatus[] = ["IN_PROGRESS", "TODO", "DONE"];
+    const statusRank = statusOrder.reduce<Record<TaskStatus, number>>((acc, status, index) => {
+      acc[status] = index;
+      return acc;
+    }, {} as Record<TaskStatus, number>);
+
+    return [...todayTasks].sort((a, b) => {
+      const statusDiff = statusRank[a.status] - statusRank[b.status];
+      if (statusDiff !== 0) return statusDiff;
+
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      const safeATime = Number.isNaN(aTime) ? 0 : aTime;
+      const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
+      return safeBTime - safeATime;
+    });
+  }, [todayTasks]);
 
   const handleCreate = async (formData: FormData) => {
     await onCreate(formData);
@@ -117,17 +135,17 @@ export default function DashboardContent({
             <p className="text-sm text-white/60">本日の予定をカレンダーのすぐ下で確認できます。</p>
           </div>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
-            {todayTasks.length} 件
+            {sortedTodayTasks.length} 件
           </span>
         </div>
 
-        {todayTasks.length === 0 ? (
+        {sortedTodayTasks.length === 0 ? (
           <p className="mt-4 rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white/60">
             今日は予定されているタスクはありません。カレンダーの日付をクリックして作成できます。
           </p>
         ) : (
           <ul className="mt-5 space-y-3">
-            {todayTasks.map((task) => (
+            {sortedTodayTasks.map((task) => (
               <li
                 key={task.id}
                 className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3"

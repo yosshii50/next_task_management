@@ -5,6 +5,7 @@ export type TaskForClient = {
   title: string;
   description: string | null;
   status: TaskStatus;
+  createdAt: string;
   startDate: string | null;
   dueDate: string | null;
   childTaskIds: number[];
@@ -16,6 +17,7 @@ export type CalendarTask = {
   title: string;
   description: string | null;
   status: TaskStatus;
+  createdAt: string;
   startDate: string | null;
   dueDate: string | null;
 };
