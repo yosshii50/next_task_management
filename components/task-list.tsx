@@ -12,6 +12,12 @@ type StatusOption = {
   label: string;
 };
 
+const statusColors: Record<TaskStatus, string> = {
+  TODO: "bg-emerald-400",
+  IN_PROGRESS: "bg-amber-400",
+  DONE: "bg-slate-400",
+};
+
 type TaskListProps = {
   tasks: TaskForClient[];
   statusOptions: StatusOption[];
@@ -165,7 +171,10 @@ export default function TaskList({
           {tasks.map((task) => (
             <li key={task.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-white">{task.title}</p>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${statusColors[task.status]}`} aria-hidden />
+                  <p className="text-sm font-medium text-white">{task.title}</p>
+                </div>
                 <p className="text-xs text-white/40">
                   ステータス: {statusMap[task.status] ?? task.status} / 開始: {task.startDate ?? "未設定"} / 期限: {task.dueDate ?? "未設定"}
                 </p>

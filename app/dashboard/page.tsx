@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import DashboardContent from "@/app/dashboard/dashboard-content";
+import { deleteTask, updateTask } from "@/app/dashboard/actions";
 import SignOutButton from "@/components/sign-out-button";
 import { authOptions } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
@@ -73,6 +74,8 @@ export default async function DashboardPage() {
           minWeeks={MIN_WEEKS}
           maxWeeks={MAX_WEEKS_TO_PRELOAD}
           daysPerWeek={DAYS_PER_WEEK}
+          onUpdate={updateTask}
+          onDelete={deleteTask}
         />
       </div>
     </div>

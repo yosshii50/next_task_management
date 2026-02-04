@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import type { TaskStatus } from "@prisma/client";
 
 import TaskCalendar from "@/components/task-calendar";
+import TaskEditModal from "@/components/task-edit-modal";
 import { buildCalendarDays } from "@/lib/dashboard-utils";
-import type { DashboardData } from "@/types/dashboard";
+import type { DashboardData, TaskForClient } from "@/types/dashboard";
 
 type StatusOption = {
   value: TaskStatus;
@@ -21,6 +21,8 @@ type DashboardContentProps = {
   minWeeks: number;
   maxWeeks: number;
   daysPerWeek: number;
+  onUpdate: (formData: FormData) => Promise<void>;
+  onDelete: (formData: FormData) => Promise<void>;
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -46,20 +48,19 @@ export default function DashboardContent({
   minWeeks,
   maxWeeks,
   daysPerWeek,
+  onUpdate,
+  onDelete,
 }: DashboardContentProps) {
-  const router = useRouter();
-  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
+  const { data, error, isLoading, mutate } = useSWR<DashboardData>("/api/dashboard", fetcher, {
     refreshInterval: 5000,
     fallbackData: initialData,
   });
+  const tasks = data?.tasks ?? initialData.tasks;
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
 
   const calendarDays = useMemo(
     () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
     [data, maxWeeks, daysPerWeek]
-  );
-  const statusLabelMap = useMemo(
-    () => Object.fromEntries(statusOptions.map((option) => [option.value, option.label])),
-    [statusOptions]
   );
   const todayTasks = useMemo(
     () => calendarDays.find((day) => day.isToday)?.tasks ?? [],
@@ -84,6 +85,29 @@ export default function DashboardContent({
     });
   }, [todayTasks]);
 
+  const editingTask: TaskForClient | null = useMemo(
+    () => tasks.find((task) => task.id === editingTaskId) ?? null,
+    [tasks, editingTaskId]
+  );
+
+  const openEdit = (taskId: number) => {
+    setEditingTaskId(taskId);
+  };
+
+  const closeEdit = () => {
+    setEditingTaskId(null);
+  };
+
+  const handleUpdate = async (formData: FormData) => {
+    await onUpdate(formData);
+    await mutate();
+  };
+
+  const handleDelete = async (formData: FormData) => {
+    await onDelete(formData);
+    await mutate();
+  };
+
   return (
     <>
       <TaskCalendar
@@ -92,8 +116,11 @@ export default function DashboardContent({
         minWeeks={minWeeks}
         maxWeeks={maxWeeks}
         daysPerWeek={daysPerWeek}
-        onEditTask={() => router.push("/tasks")}
-        onCreateTask={(date) => router.push(`/tasks?date=${date}`)}
+        onEditTask={openEdit}
+        onCreateTask={(date) => {
+          const params = new URLSearchParams({ date });
+          window.location.href = `/tasks?${params.toString()}`;
+        }}
       />
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -123,21 +150,18 @@ export default function DashboardContent({
                   <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[task.status]}`} aria-hidden />
                   <div>
                     <p className="text-sm font-semibold text-white">{task.title}</p>
-                    <p className="text-xs text-white/60">
-                      ステータス: {statusLabelMap[task.status] ?? task.status}
-                      {task.dueDate ? ` / 期限: ${task.dueDate}` : ""}
-                    </p>
                     {task.description && task.description.trim().length > 0 && (
                       <p className="mt-1 text-xs text-white/70">{task.description}</p>
                     )}
                   </div>
                 </div>
-                <a
-                  href="/tasks"
+                <button
+                  type="button"
+                  onClick={() => openEdit(task.id)}
                   className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
                 >
-                  管理へ
-                </a>
+                  修正
+                </button>
               </li>
             ))}
           </ul>
@@ -146,6 +170,17 @@ export default function DashboardContent({
 
       {isLoading && !data && <p className="text-sm text-white/60">データを読み込み中です...</p>}
           {error && <p className="text-sm text-rose-300">最新データの取得に失敗しました。時間をおいて再度お試しください。</p>}
+
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          tasks={tasks}
+          statusOptions={statusOptions}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+          onClose={closeEdit}
+        />
+      )}
     </>
   );
 }
