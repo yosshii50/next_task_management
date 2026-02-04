@@ -46,7 +46,7 @@ export default function TaskManagementContent({
     fallbackData: initialData,
   });
 
-  const tasks = data?.tasks ?? [];
+  const tasks = useMemo(() => data?.tasks ?? [], [data?.tasks]);
   const [pendingCreateDate, setPendingCreateDate] = useState<string | null>(initialCreateDate);
   const [pendingEditId, setPendingEditId] = useState<number | null>(initialEditTargetId);
   const [visibleStatuses, setVisibleStatuses] = useState<Set<TaskStatus>>(

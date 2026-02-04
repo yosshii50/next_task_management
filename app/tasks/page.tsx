@@ -20,7 +20,7 @@ type TaskPageProps = {
   };
 };
 
-export default async function TaskManagementPage({ searchParams }: TaskPageProps = {}) {
+export default async function TaskManagementPage({ searchParams }: TaskPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
