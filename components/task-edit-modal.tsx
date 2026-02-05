@@ -5,6 +5,7 @@ import type { TaskStatus } from "@prisma/client";
 
 import DatePicker from "./date-picker";
 import type { TaskForClient } from "@/types/dashboard";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 type StatusOption = {
   value: TaskStatus;
@@ -71,6 +72,9 @@ export default function TaskEditModal({ task, tasks, statusOptions, onUpdate, on
       onClose();
     });
   };
+
+  useEscapeKey(showDeleteConfirm, () => setShowDeleteConfirm(false));
+  useEscapeKey(!showDeleteConfirm, onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

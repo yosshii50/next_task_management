@@ -8,6 +8,7 @@ import {
   generateYearlyHolidays,
   updateHoliday,
 } from "@/app/settings/holidays/actions";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 export type HolidayForClient = {
   id: number;
@@ -98,6 +99,10 @@ export default function HolidayList({ holidays }: HolidayListProps) {
       setGenerateModalOpen(false);
     });
   }
+
+  useEscapeKey(Boolean(modalState), closeModal);
+  useEscapeKey(Boolean(deleteTarget), closeDelete);
+  useEscapeKey(generateModalOpen, closeGenerateModal);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">

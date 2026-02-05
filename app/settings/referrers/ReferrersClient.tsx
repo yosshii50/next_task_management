@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { addChildAccount, deleteChildren, updateChildMemo, updateChildrenStatus } from "./actions";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 type Child = {
   id: number;
@@ -143,6 +144,10 @@ export default function ReferrersClient({ childAccounts }: Props) {
     setShowDeactivateConfirm(false);
     void handleBulkStatusChange("inactive", { sendMail: sendDeactivationEmail });
   };
+
+  useEscapeKey(showActivateConfirm, () => setShowActivateConfirm(false));
+  useEscapeKey(showDeactivateConfirm, () => setShowDeactivateConfirm(false));
+  useEscapeKey(showConfirm, () => setShowConfirm(false));
 
   const handleMemoChange = (id: number, value: string) => {
     setMemoDrafts((prev) => {

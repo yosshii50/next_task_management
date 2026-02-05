@@ -4,6 +4,7 @@ import { type ChangeEvent, useMemo, useState } from "react";
 import type { TaskStatus } from "@prisma/client";
 
 import type { CalendarDay, CalendarTask } from "@/types/dashboard";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 type TaskCalendarProps = {
   days: CalendarDay[];
@@ -70,6 +71,8 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
     if (!onCreateTask) return;
     onCreateTask(date);
   };
+
+  useEscapeKey(Boolean(selectedTask), closeTaskDetails);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">

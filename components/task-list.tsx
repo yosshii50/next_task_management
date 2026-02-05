@@ -5,6 +5,7 @@ import type { TaskStatus } from "@prisma/client";
 
 import type { TaskForClient } from "@/types/dashboard";
 import { formatDateForInput, getJapanToday } from "@/lib/dashboard-utils";
+import { useEscapeKey } from "@/lib/use-escape-key";
 import DatePicker from "./date-picker";
 
 type StatusOption = {
@@ -151,6 +152,9 @@ export default function TaskList({
     setModalState({ type: "create", presetDate: createRequestDate });
     onCreateRequestHandled();
   }, [createRequestDate, onCreateRequestHandled]);
+
+  useEscapeKey(Boolean(modalState), closeModal);
+  useEscapeKey(Boolean(deleteTarget), closeDelete);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">

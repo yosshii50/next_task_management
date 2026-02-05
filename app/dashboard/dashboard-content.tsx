@@ -8,6 +8,7 @@ import TaskCalendar from "@/components/task-calendar";
 import DatePicker from "@/components/date-picker";
 import TaskEditModal from "@/components/task-edit-modal";
 import { buildCalendarDays, formatDateForInput, getJapanToday } from "@/lib/dashboard-utils";
+import { useEscapeKey } from "@/lib/use-escape-key";
 import type { DashboardData, TaskForClient } from "@/types/dashboard";
 
 type StatusOption = {
@@ -138,6 +139,8 @@ export default function DashboardContent({
     await onDelete(formData);
     await mutate();
   };
+
+  useEscapeKey(isCreateOpen, closeCreate);
 
   return (
     <>
