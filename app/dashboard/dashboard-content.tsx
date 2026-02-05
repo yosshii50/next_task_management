@@ -69,10 +69,16 @@ export default function DashboardContent({
     () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
     [data, maxWeeks, daysPerWeek]
   );
-  const todayTasks = useMemo(
-    () => calendarDays.find((day) => day.isToday)?.tasks ?? [],
-    [calendarDays]
-  );
+  const todayTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (!task.startDate) return false;
+
+      const isStarted = task.startDate <= todayIso;
+      const isToday = task.startDate === todayIso;
+
+      return (isStarted && task.status !== "DONE") || (isToday && task.status === "DONE");
+    });
+  }, [tasks, todayIso]);
   const sortedTodayTasks = useMemo(() => {
     const statusOrder: TaskStatus[] = ["IN_PROGRESS", "TODO", "DONE"];
     const statusRank = statusOrder.reduce<Record<TaskStatus, number>>((acc, status, index) => {
