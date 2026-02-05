@@ -28,11 +28,73 @@ type DashboardContentProps = {
   onDelete: (formData: FormData) => Promise<void>;
 };
 
+type TaskNode = {
+  task: TaskForClient;
+  children: TaskNode[];
+};
+
 const statusColors: Record<TaskStatus, string> = {
   TODO: "bg-emerald-400",
   IN_PROGRESS: "bg-amber-400",
   DONE: "bg-slate-400",
 };
+
+const treeStatusOrder: TaskStatus[] = ["IN_PROGRESS", "TODO"];
+
+function buildActiveTaskTree(tasks: TaskForClient[]): TaskNode[] {
+  const targetStatuses = new Set<TaskStatus>(["TODO", "IN_PROGRESS"]);
+  const filtered = tasks.filter((task) => targetStatuses.has(task.status));
+  const nodeMap = new Map<number, TaskNode>();
+
+  filtered.forEach((task) => {
+    nodeMap.set(task.id, { task, children: [] });
+  });
+
+  const roots: TaskNode[] = [];
+
+  filtered.forEach((task) => {
+    const node = nodeMap.get(task.id);
+    if (!node) return;
+    const activeParents = task.parentTaskIds.filter((parentId) => nodeMap.has(parentId));
+
+    if (activeParents.length === 0) {
+      roots.push(node);
+      return;
+    }
+
+    const parentId = Math.min(...activeParents);
+    const parentNode = nodeMap.get(parentId);
+    if (parentNode) {
+      parentNode.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  const statusRank = treeStatusOrder.reduce<Record<TaskStatus, number>>((acc, status, index) => {
+    acc[status] = index;
+    return acc;
+  }, {} as Record<TaskStatus, number>);
+
+  const sortNodes = (nodes: TaskNode[]) => {
+    nodes.sort((a, b) => {
+      const statusDiff = (statusRank[a.task.status] ?? 99) - (statusRank[b.task.status] ?? 99);
+      if (statusDiff !== 0) return statusDiff;
+
+      const aTime = new Date(a.task.createdAt).getTime();
+      const bTime = new Date(b.task.createdAt).getTime();
+      const safeATime = Number.isNaN(aTime) ? 0 : aTime;
+      const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
+      return safeBTime - safeATime;
+    });
+
+    nodes.forEach((node) => sortNodes(node.children));
+  };
+
+  sortNodes(roots);
+
+  return roots;
+}
 
 const fetcher = async (url: string): Promise<DashboardData> => {
   const response = await fetch(url);
@@ -67,6 +129,10 @@ export default function DashboardContent({
   const [presetDate, setPresetDate] = useState<string | null>(null);
   const [isCreating, startCreatingTransition] = useTransition();
   const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
+  const statusLabelMap = useMemo(
+    () => Object.fromEntries(statusOptions.map((option) => [option.value, option.label])),
+    [statusOptions]
+  );
 
   const calendarDays = useMemo(
     () => buildCalendarDays(dashboardData, maxWeeks, daysPerWeek),
@@ -100,6 +166,8 @@ export default function DashboardContent({
       return safeBTime - safeATime;
     });
   }, [todayTasks]);
+
+  const activeTaskTree = useMemo(() => buildActiveTaskTree(tasks), [tasks]);
 
   const editingTask: TaskForClient | null = useMemo(
     () => tasks.find((task) => task.id === editingTaskId) ?? null,
@@ -144,18 +212,44 @@ export default function DashboardContent({
 
   useEscapeKey(isCreateOpen, closeCreate);
 
+  const renderTaskNode = (node: TaskNode) => (
+    <li key={node.task.id} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[node.task.status]}`} aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-white">{node.task.title}</p>
+            {node.task.description && node.task.description.trim().length > 0 && (
+              <p className="mt-1 text-xs text-white/70">{node.task.description}</p>
+            )}
+            <p className="mt-1 text-[11px] text-white/50">
+              {statusLabelMap[node.task.status] ?? node.task.status} / 開始: {node.task.startDate ?? "未設定"} / 期限: {node.task.dueDate ?? "未設定"}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => openEdit(node.task.id)}
+          className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+        >
+          修正
+        </button>
+      </div>
+      {node.children.length > 0 && (
+        <ul className="mt-2 space-y-2 border-l border-white/10 pl-4">
+          {node.children.map((child) => (
+            <div key={child.task.id} className="relative">
+              <span className="absolute -left-4 top-3 h-px w-3 bg-white/15" aria-hidden />
+              {renderTaskNode(child)}
+            </div>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+
   return (
     <>
-      <TaskCalendar
-        days={calendarDays}
-        defaultWeeks={defaultWeeks}
-        minWeeks={minWeeks}
-        maxWeeks={maxWeeks}
-        daysPerWeek={daysPerWeek}
-        onEditTask={openEdit}
-        onCreateTask={(date) => openCreate(date)}
-      />
-
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -207,6 +301,36 @@ export default function DashboardContent({
               </li>
             ))}
           </ul>
+        )}
+
+      </section>
+
+      <TaskCalendar
+        days={calendarDays}
+        defaultWeeks={defaultWeeks}
+        minWeeks={minWeeks}
+        maxWeeks={maxWeeks}
+        daysPerWeek={daysPerWeek}
+        onEditTask={openEdit}
+        onCreateTask={(date) => openCreate(date)}
+      />
+
+      <section className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-emerald-300">Structure</p>
+            <h3 className="text-lg font-semibold text-white">未着手 / 進行中のタスクツリー</h3>
+            <p className="text-xs text-white/60">親子関係をインデントで確認できます。完了済みは省いています。</p>
+          </div>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">{activeTaskTree.length} ルート</span>
+        </div>
+
+        {activeTaskTree.length === 0 ? (
+          <p className="mt-4 rounded-2xl border border-dashed border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white/60">
+            未着手または進行中のタスクがありません。新しいタスクを追加するとここにツリー表示されます。
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-2">{activeTaskTree.map((node) => renderTaskNode(node))}</ul>
         )}
       </section>
 
