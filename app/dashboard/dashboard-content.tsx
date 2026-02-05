@@ -59,7 +59,9 @@ export default function DashboardContent({
     refreshInterval: 5000,
     fallbackData: initialData,
   });
-  const tasks = data?.tasks ?? initialData.tasks;
+  // SWR がまだレスポンスを返していない場合も初期データで即座に描画できるようにする。
+  const dashboardData = data ?? initialData;
+  const tasks = dashboardData.tasks;
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [presetDate, setPresetDate] = useState<string | null>(null);
@@ -67,8 +69,8 @@ export default function DashboardContent({
   const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
 
   const calendarDays = useMemo(
-    () => (data ? buildCalendarDays(data, maxWeeks, daysPerWeek) : []),
-    [data, maxWeeks, daysPerWeek]
+    () => buildCalendarDays(dashboardData, maxWeeks, daysPerWeek),
+    [dashboardData, maxWeeks, daysPerWeek]
   );
   const todayTasks = useMemo(() => {
     return tasks.filter((task) => {
