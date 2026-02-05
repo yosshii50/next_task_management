@@ -19,8 +19,13 @@ const features = [
 ];
 
 export default async function Home() {
-  const totalAccounts = await prisma.user.count();
+  const [totalAccounts, totalTasks] = await Promise.all([
+    prisma.user.count(),
+    prisma.task.count(),
+  ]);
+
   const formattedAccounts = new Intl.NumberFormat("ja-JP").format(totalAccounts);
+  const formattedTasks = new Intl.NumberFormat("ja-JP").format(totalTasks);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -43,6 +48,10 @@ export default async function Home() {
               <div>
                 <p className="text-3xl font-semibold text-white">{formattedAccounts}件</p>
                 <p className="text-sm text-white/60">総アカウント数</p>
+              </div>
+              <div>
+                <p className="text-3xl font-semibold text-white">{formattedTasks}件</p>
+                <p className="text-sm text-white/60">総タスク数</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-4">
