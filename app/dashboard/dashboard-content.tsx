@@ -64,10 +64,19 @@ export default function DashboardContent({
   const [isLinking, setIsLinking] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "tree">("list");
   const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
-  const statusLabelMap = useMemo(
-    () => Object.fromEntries(statusOptions.map((option) => [option.value, option.label])),
-    [statusOptions]
-  );
+  const statusLabelMap = useMemo(() => {
+    const base: Record<TaskStatus, string> = {
+      TODO: "未着手",
+      IN_PROGRESS: "進行中",
+      DONE: "完了",
+    };
+
+    statusOptions.forEach((option) => {
+      base[option.value] = option.label;
+    });
+
+    return base;
+  }, [statusOptions]);
 
   const calendarDays = useMemo(
     () => buildCalendarDays(dashboardData, maxWeeks, daysPerWeek),
@@ -141,10 +150,13 @@ export default function DashboardContent({
     setPresetDate(null);
   };
 
-  const handleUpdate = async (formData: FormData) => {
-    await onUpdate(formData);
-    await mutate();
-  };
+  const handleUpdate = useCallback(
+    async (formData: FormData) => {
+      await onUpdate(formData);
+      await mutate();
+    },
+    [onUpdate, mutate]
+  );
 
   const handleCreate = (formData: FormData) => {
     startCreatingTransition(async () => {
