@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import useSWR from "swr";
 import type { TaskStatus } from "@prisma/client";
 
@@ -166,6 +166,9 @@ export default function DashboardContent({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [presetDate, setPresetDate] = useState<string | null>(null);
   const [isCreating, startCreatingTransition] = useTransition();
+  const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
+  const [isLinking, setIsLinking] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "tree">("list");
   const todayIso = useMemo(() => formatDateForInput(getJapanToday()), []);
   const statusLabelMap = useMemo(
@@ -219,6 +222,8 @@ export default function DashboardContent({
   );
 
   const activeTaskTree = useMemo(() => buildActiveTaskTree(activeTreeSourceTasks), [activeTreeSourceTasks]);
+  const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
+  const childMap = useMemo(() => new Map(tasks.map((task) => [task.id, task.childTaskIds ?? []])), [tasks]);
 
   const editingTask: TaskForClient | null = useMemo(
     () => tasks.find((task) => task.id === editingTaskId) ?? null,
@@ -261,43 +266,156 @@ export default function DashboardContent({
     await mutate();
   };
 
+  const isDescendant = useCallback(
+    (ancestorId: number, maybeDescendantId: number) => {
+      if (ancestorId === maybeDescendantId) return true;
+      const visited = new Set<number>();
+      const stack = [ancestorId];
+
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        if (visited.has(current)) continue;
+        visited.add(current);
+
+        const children = childMap.get(current) ?? [];
+        for (const childId of children) {
+          if (childId === maybeDescendantId) return true;
+          stack.push(childId);
+        }
+      }
+
+      return false;
+    },
+    [childMap]
+  );
+
+  const isValidDropTarget = useCallback(
+    (targetId: number) => {
+      if (draggingTaskId === null) return false;
+      if (targetId === draggingTaskId) return false;
+      return !isDescendant(draggingTaskId, targetId);
+    },
+    [draggingTaskId, isDescendant]
+  );
+
+  const handleLinkByDrop = useCallback(
+    async (targetId: number) => {
+      const childId = draggingTaskId;
+      if (childId === null) return;
+      if (!isValidDropTarget(targetId)) {
+        setDraggingTaskId(null);
+        setDragOverId(null);
+        return;
+      }
+
+      const parent = taskMap.get(targetId);
+      const child = taskMap.get(childId);
+      if (!parent || !child) return;
+
+      const newChildren = Array.from(new Set([...(parent.childTaskIds ?? []), child.id]));
+
+      const formData = new FormData();
+      formData.set("taskId", parent.id.toString());
+      formData.set("title", parent.title);
+      formData.set("description", parent.description ?? "");
+      formData.set("status", parent.status);
+      formData.set("startDate", parent.startDate ?? "");
+      formData.set("dueDate", parent.dueDate ?? "");
+      newChildren.forEach((id) => formData.append("childTaskIds", id.toString()));
+
+      try {
+        setIsLinking(true);
+        await handleUpdate(formData);
+      } finally {
+        setIsLinking(false);
+        setDraggingTaskId(null);
+        setDragOverId(null);
+      }
+    },
+    [draggingTaskId, handleUpdate, isValidDropTarget, taskMap]
+  );
+
   useEscapeKey(isCreateOpen, closeCreate);
 
-  const renderTaskNode = (node: TaskNode) => (
-    <li key={node.task.id} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2">
-          <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[node.task.status]}`} aria-hidden />
-          <div>
-            <p className="text-sm font-semibold text-white">{node.task.title}</p>
-            {node.task.description && node.task.description.trim().length > 0 && (
-              <p className="mt-1 text-xs text-white/70">{node.task.description}</p>
-            )}
-            <p className="mt-1 text-[11px] text-white/50">
-              {statusLabelMap[node.task.status] ?? node.task.status} / 開始: {node.task.startDate ?? "未設定"} / 期限: {node.task.dueDate ?? "未設定"}
-            </p>
+  const renderTaskNode = (node: TaskNode) => {
+    const isDragging = draggingTaskId === node.task.id;
+    const isDroppable = isValidDropTarget(node.task.id);
+    const isDragOver = dragOverId === node.task.id && isDroppable;
+
+    const baseClasses =
+      "rounded-2xl border bg-slate-950/40 px-4 py-3 transition-colors duration-150 border-white/10";
+    const dragClasses = [
+      isDragOver ? "border-emerald-300/70 bg-emerald-300/10" : "",
+      isDragging ? "opacity-70 ring-1 ring-emerald-300/50" : "",
+      !isDragging && isDroppable ? "hover:border-emerald-300/60" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      <li
+        key={node.task.id}
+        className={`${baseClasses} ${dragClasses}`}
+        draggable
+        onDragStart={() => {
+          setDraggingTaskId(node.task.id);
+        }}
+        onDragEnd={() => {
+          setDraggingTaskId(null);
+          setDragOverId(null);
+        }}
+        onDragOver={(event) => {
+          if (!isDroppable) return;
+          event.preventDefault();
+          setDragOverId(node.task.id);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          handleLinkByDrop(node.task.id);
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[node.task.status]}`} aria-hidden />
+            <div>
+              <p className="text-sm font-semibold text-white">{node.task.title}</p>
+              {node.task.description && node.task.description.trim().length > 0 && (
+                <p className="mt-1 text-xs text-white/70">{node.task.description}</p>
+              )}
+              <p className="mt-1 text-[11px] text-white/50">
+                {statusLabelMap[node.task.status] ?? node.task.status} / 開始: {node.task.startDate ?? "未設定"} / 期限:{" "}
+                {node.task.dueDate ?? "未設定"}
+              </p>
+              <p className="mt-1 text-[11px] text-emerald-200/80">
+                ドラッグ&ドロップでこのタスクの子に設定できます
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isDragOver && <span className="text-[11px] font-semibold text-emerald-300">ここにドロップ</span>}
+            <button
+              type="button"
+              onClick={() => openEdit(node.task.id)}
+              className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+            >
+              修正
+            </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => openEdit(node.task.id)}
-          className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
-        >
-          修正
-        </button>
-      </div>
-      {node.children.length > 0 && (
-        <ul className="mt-2 space-y-2 border-l border-white/10 pl-4">
-          {node.children.map((child) => (
-            <div key={child.task.id} className="relative">
-              <span className="absolute -left-4 top-3 h-px w-3 bg-white/15" aria-hidden />
-              {renderTaskNode(child)}
-            </div>
-          ))}
-        </ul>
-      )}
-    </li>
-  );
+        {node.children.length > 0 && (
+          <ul className="mt-2 space-y-2 border-l border-white/10 pl-4">
+            {node.children.map((child) => (
+              <div key={child.task.id} className="relative">
+                <span className="absolute -left-4 top-3 h-px w-3 bg-white/15" aria-hidden />
+                {renderTaskNode(child)}
+              </div>
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  };
 
   return (
     <>
@@ -305,14 +423,8 @@ export default function DashboardContent({
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Focus</p>
-            <h2 className="text-2xl font-semibold text-white">
-              {viewMode === "list" ? "今日のタスク" : "未着手 / 進行中のタスクツリー"}
-            </h2>
-            <p className="text-sm text-white/60">
-              {viewMode === "list"
-                ? "本日の予定をまとめて確認・追加できます。"
-                : "親子関係をインデントで把握できます。完了済みは省いています。"}
-            </p>
+            <h2 className="text-2xl font-semibold text-white">今日のタスク</h2>
+            <p className="text-sm text-white/60">本日の予定をまとめて確認・追加できます。</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex rounded-full bg-white/10 p-1 text-xs font-semibold text-white/70">
@@ -345,6 +457,7 @@ export default function DashboardContent({
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
               {viewMode === "list" ? `${sortedTodayTasks.length} 件` : `${activeTaskTree.length} ルート`}
             </span>
+            {isLinking && <span className="text-[11px] font-semibold text-emerald-300">リンク反映中...</span>}
           </div>
         </div>
 
@@ -355,29 +468,69 @@ export default function DashboardContent({
             </p>
           ) : (
             <ul className="mt-5 space-y-3">
-              {sortedTodayTasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[task.status]}`} aria-hidden />
-                    <div>
-                      <p className="text-sm font-semibold text-white">{task.title}</p>
-                      {task.description && task.description.trim().length > 0 && (
-                        <p className="mt-1 text-xs text-white/70">{task.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openEdit(task.id)}
-                    className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+              {sortedTodayTasks.map((task) => {
+                const isDragging = draggingTaskId === task.id;
+                const isDroppable = isValidDropTarget(task.id);
+                const isDragOver = dragOverId === task.id && isDroppable;
+
+                const baseClasses =
+                  "flex items-start justify-between gap-3 rounded-2xl border bg-slate-950/40 px-4 py-3 transition-colors duration-150";
+                const dragClasses = [
+                  isDragOver ? "border-emerald-300/70 bg-emerald-300/10" : "border-white/10",
+                  isDragging ? "opacity-70 ring-1 ring-emerald-300/50" : "",
+                  !isDragging && isDroppable ? "hover:border-emerald-300/60" : "hover:border-white/20",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
+                return (
+                  <li
+                    key={task.id}
+                    className={`${baseClasses} ${dragClasses}`}
+                    draggable
+                    onDragStart={() => setDraggingTaskId(task.id)}
+                    onDragEnd={() => {
+                      setDraggingTaskId(null);
+                      setDragOverId(null);
+                    }}
+                    onDragOver={(event) => {
+                      if (!isDroppable) return;
+                      event.preventDefault();
+                      setDragOverId(task.id);
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleLinkByDrop(task.id);
+                    }}
                   >
-                    修正
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[task.status]}`} aria-hidden />
+                      <div>
+                        <p className="text-sm font-semibold text-white">{task.title}</p>
+                        {task.description && task.description.trim().length > 0 && (
+                          <p className="mt-1 text-xs text-white/70">{task.description}</p>
+                        )}
+                        <p className="mt-1 text-[11px] text-white/50">
+                          {statusLabelMap[task.status] ?? task.status} / 開始: {task.startDate ?? "未設定"} / 期限:{" "}
+                          {task.dueDate ?? "未設定"}
+                        </p>
+                        <p className="mt-1 text-[11px] text-emerald-200/80">ドラッグ&ドロップで子タスクを設定</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isDragOver && <span className="text-[11px] font-semibold text-emerald-300">ここにドロップ</span>}
+                      <button
+                        type="button"
+                        onClick={() => openEdit(task.id)}
+                        className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+                      >
+                        修正
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )
         ) : activeTaskTree.length === 0 ? (
