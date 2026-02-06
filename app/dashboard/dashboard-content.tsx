@@ -5,16 +5,15 @@ import useSWR from "swr";
 import type { TaskStatus } from "@prisma/client";
 
 import TaskCalendar from "@/components/task-calendar";
-import DatePicker from "@/components/date-picker";
 import TaskEditModal from "@/components/task-edit-modal";
 import { buildCalendarDays, formatDateForInput, getJapanToday } from "@/lib/dashboard-utils";
 import { useEscapeKey } from "@/lib/use-escape-key";
 import type { DashboardData, TaskForClient } from "@/types/dashboard";
 
-type StatusOption = {
-  value: TaskStatus;
-  label: string;
-};
+import CreateTaskModal, { type StatusOption } from "./components/create-task-modal";
+import TaskListView from "./components/task-list-view";
+import TaskTreeView from "./components/task-tree-view";
+import { buildActiveTaskTree } from "./utils/task-tree";
 
 type DashboardContentProps = {
   statusOptions: StatusOption[];
@@ -27,112 +26,6 @@ type DashboardContentProps = {
   onUpdate: (formData: FormData) => Promise<void>;
   onDelete: (formData: FormData) => Promise<void>;
 };
-
-type TaskNode = {
-  task: TaskForClient;
-  children: TaskNode[];
-};
-
-const statusColors: Record<TaskStatus, string> = {
-  TODO: "bg-emerald-400",
-  IN_PROGRESS: "bg-amber-400",
-  DONE: "bg-slate-400",
-};
-
-const treeStatusOrder: TaskStatus[] = ["IN_PROGRESS", "TODO", "DONE"];
-
-function buildActiveTaskTree(tasks: TaskForClient[]): TaskNode[] {
-  const targetStatuses = new Set<TaskStatus>(["TODO", "IN_PROGRESS", "DONE"]);
-  const activeTasks = tasks.filter((task) => targetStatuses.has(task.status));
-
-  const taskMap = new Map(activeTasks.map((task) => [task.id, task]));
-  const childrenMap = new Map<number, number[]>();
-  const activeParentMap = new Map<number, number[]>();
-
-  activeTasks.forEach((task) => {
-    const activeChildren = task.childTaskIds.filter((childId) => taskMap.has(childId));
-    childrenMap.set(task.id, activeChildren);
-    const activeParents = task.parentTaskIds.filter((parentId) => taskMap.has(parentId));
-    activeParentMap.set(task.id, activeParents);
-  });
-
-  const statusRank = treeStatusOrder.reduce<Record<TaskStatus, number>>((acc, status, index) => {
-    acc[status] = index;
-    return acc;
-  }, {} as Record<TaskStatus, number>);
-
-  const buildNode = (taskId: number, visited: Set<number>): TaskNode => {
-    const task = taskMap.get(taskId)!;
-    const node: TaskNode = { task, children: [] };
-
-    const nextVisited = new Set(visited);
-    nextVisited.add(taskId);
-
-    const childIds = childrenMap.get(taskId) ?? [];
-    childIds.forEach((childId) => {
-      if (nextVisited.has(childId)) return; // cycle guard
-      node.children.push(buildNode(childId, nextVisited));
-    });
-
-    node.children.sort((a, b) => {
-      const statusDiff = (statusRank[a.task.status] ?? 99) - (statusRank[b.task.status] ?? 99);
-      if (statusDiff !== 0) return statusDiff;
-      const aTime = new Date(a.task.createdAt).getTime();
-      const bTime = new Date(b.task.createdAt).getTime();
-      const safeATime = Number.isNaN(aTime) ? 0 : aTime;
-      const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
-      return safeBTime - safeATime;
-    });
-
-    return node;
-  };
-
-  // 矢印を親→子で埋める（子が複数の親を持つ場合は両方にぶら下げる）
-  activeTasks.forEach((task) => {
-    const activeParents = activeParentMap.get(task.id) ?? [];
-    activeParents.forEach((parentId) => {
-      if (!taskMap.has(parentId)) return;
-      const parentChildren = childrenMap.get(parentId) ?? [];
-      if (!parentChildren.includes(task.id)) {
-        childrenMap.set(parentId, [...parentChildren, task.id]);
-      }
-    });
-  });
-
-  // ルートを一意に集める（アクティブ親なしのタスク、および親チェーンの起点）
-  const rootIds = new Set<number>();
-  activeTasks.forEach((task) => {
-    const activeParents = activeParentMap.get(task.id) ?? [];
-    if (activeParents.length === 0) {
-      rootIds.add(task.id);
-    }
-  });
-  activeTasks.forEach((task) => {
-    const activeParents = activeParentMap.get(task.id) ?? [];
-    activeParents.forEach((parentId) => {
-      const parentTask = taskMap.get(parentId);
-      if (!parentTask) return;
-      const parentHasParent = parentTask.parentTaskIds.some((pp) => taskMap.has(pp));
-      if (!parentHasParent) {
-        rootIds.add(parentId);
-      }
-    });
-  });
-
-  const roots: TaskNode[] = Array.from(rootIds).map((id) => buildNode(id, new Set()));
-
-  roots.sort((a, b) => {
-    const statusDiff = (statusRank[a.task.status] ?? 99) - (statusRank[b.task.status] ?? 99);
-    if (statusDiff !== 0) return statusDiff;
-    const aTime = new Date(a.task.createdAt).getTime();
-    const bTime = new Date(b.task.createdAt).getTime();
-    const safeATime = Number.isNaN(aTime) ? 0 : aTime;
-    const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
-    return safeBTime - safeATime;
-  });
-
-  return roots;
-}
 
 const fetcher = async (url: string): Promise<DashboardData> => {
   const response = await fetch(url);
@@ -337,86 +230,6 @@ export default function DashboardContent({
 
   useEscapeKey(isCreateOpen, closeCreate);
 
-  const renderTaskNode = (node: TaskNode) => {
-    const isDragging = draggingTaskId === node.task.id;
-    const isDroppable = isValidDropTarget(node.task.id);
-    const isDragOver = dragOverId === node.task.id && isDroppable;
-
-    const baseClasses =
-      "rounded-2xl border bg-slate-950/40 px-4 py-3 transition-colors duration-150 border-white/10";
-    const dragClasses = [
-      isDragOver ? "border-emerald-300/70 bg-emerald-300/10" : "",
-      isDragging ? "opacity-70 ring-1 ring-emerald-300/50" : "",
-      !isDragging && isDroppable ? "hover:border-emerald-300/60" : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    return (
-      <li
-        key={node.task.id}
-        className={`${baseClasses} ${dragClasses}`}
-        draggable
-        onDragStart={() => {
-          setDraggingTaskId(node.task.id);
-        }}
-        onDragEnd={() => {
-          setDraggingTaskId(null);
-          setDragOverId(null);
-        }}
-        onDragOver={(event) => {
-          if (!isDroppable) return;
-          event.preventDefault();
-          setDragOverId(node.task.id);
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          handleLinkByDrop(node.task.id);
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2">
-            <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[node.task.status]}`} aria-hidden />
-            <div>
-              <p className="text-sm font-semibold text-white">{node.task.title}</p>
-              {node.task.description && node.task.description.trim().length > 0 && (
-                <p className="mt-1 text-xs text-white/70">{node.task.description}</p>
-              )}
-              <p className="mt-1 text-[11px] text-white/50">
-                {statusLabelMap[node.task.status] ?? node.task.status} / 開始: {node.task.startDate ?? "未設定"} / 期限:{" "}
-                {node.task.dueDate ?? "未設定"}
-              </p>
-              <p className="mt-1 text-[11px] text-emerald-200/80">
-                ドラッグ&ドロップでこのタスクの子に設定できます
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isDragOver && <span className="text-[11px] font-semibold text-emerald-300">ここにドロップ</span>}
-            <button
-              type="button"
-              onClick={() => openEdit(node.task.id)}
-              className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
-            >
-              修正
-            </button>
-          </div>
-        </div>
-        {node.children.length > 0 && (
-          <ul className="mt-2 space-y-2 border-l border-white/10 pl-4">
-            {node.children.map((child) => (
-              <div key={child.task.id} className="relative">
-                <span className="absolute -left-4 top-3 h-px w-3 bg-white/15" aria-hidden />
-                {renderTaskNode(child)}
-              </div>
-            ))}
-          </ul>
-        )}
-      </li>
-    );
-  };
-
   return (
     <>
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -462,83 +275,30 @@ export default function DashboardContent({
         </div>
 
         {viewMode === "list" ? (
-          sortedTodayTasks.length === 0 ? (
-            <p className="mt-4 rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white/60">
-              今日は予定されているタスクはありません。カレンダーの日付をクリックして作成できます。
-            </p>
-          ) : (
-            <ul className="mt-5 space-y-3">
-              {sortedTodayTasks.map((task) => {
-                const isDragging = draggingTaskId === task.id;
-                const isDroppable = isValidDropTarget(task.id);
-                const isDragOver = dragOverId === task.id && isDroppable;
-
-                const baseClasses =
-                  "flex items-start justify-between gap-3 rounded-2xl border bg-slate-950/40 px-4 py-3 transition-colors duration-150";
-                const dragClasses = [
-                  isDragOver ? "border-emerald-300/70 bg-emerald-300/10" : "border-white/10",
-                  isDragging ? "opacity-70 ring-1 ring-emerald-300/50" : "",
-                  !isDragging && isDroppable ? "hover:border-emerald-300/60" : "hover:border-white/20",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return (
-                  <li
-                    key={task.id}
-                    className={`${baseClasses} ${dragClasses}`}
-                    draggable
-                    onDragStart={() => setDraggingTaskId(task.id)}
-                    onDragEnd={() => {
-                      setDraggingTaskId(null);
-                      setDragOverId(null);
-                    }}
-                    onDragOver={(event) => {
-                      if (!isDroppable) return;
-                      event.preventDefault();
-                      setDragOverId(task.id);
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      handleLinkByDrop(task.id);
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className={`mt-1 h-2.5 w-2.5 rounded-full ${statusColors[task.status]}`} aria-hidden />
-                      <div>
-                        <p className="text-sm font-semibold text-white">{task.title}</p>
-                        {task.description && task.description.trim().length > 0 && (
-                          <p className="mt-1 text-xs text-white/70">{task.description}</p>
-                        )}
-                        <p className="mt-1 text-[11px] text-white/50">
-                          {statusLabelMap[task.status] ?? task.status} / 開始: {task.startDate ?? "未設定"} / 期限:{" "}
-                          {task.dueDate ?? "未設定"}
-                        </p>
-                        <p className="mt-1 text-[11px] text-emerald-200/80">ドラッグ&ドロップで子タスクを設定</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isDragOver && <span className="text-[11px] font-semibold text-emerald-300">ここにドロップ</span>}
-                      <button
-                        type="button"
-                        onClick={() => openEdit(task.id)}
-                        className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
-                      >
-                        修正
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )
-        ) : activeTaskTree.length === 0 ? (
-          <p className="mt-4 rounded-2xl border border-dashed border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white/60">
-            未着手または進行中のタスクがありません。新しいタスクを追加するとここにツリー表示されます。
-          </p>
+          <TaskListView
+            tasks={sortedTodayTasks}
+            statusLabelMap={statusLabelMap}
+            draggingTaskId={draggingTaskId}
+            dragOverId={dragOverId}
+            setDraggingTaskId={setDraggingTaskId}
+            setDragOverId={setDragOverId}
+            isValidDropTarget={isValidDropTarget}
+            handleLinkByDrop={handleLinkByDrop}
+            openEdit={openEdit}
+          />
         ) : (
-          <ul className="mt-4 space-y-2">{activeTaskTree.map((node) => renderTaskNode(node))}</ul>
+          <TaskTreeView
+            nodes={activeTaskTree}
+            statusLabelMap={statusLabelMap}
+            draggingTaskId={draggingTaskId}
+            dragOverId={dragOverId}
+            setDraggingTaskId={setDraggingTaskId}
+            setDragOverId={setDragOverId}
+            isValidDropTarget={isValidDropTarget}
+            handleLinkByDrop={handleLinkByDrop}
+            openEdit={openEdit}
+            isLinking={isLinking}
+          />
         )}
       </section>
 
@@ -566,85 +326,15 @@ export default function DashboardContent({
         />
       )}
 
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-950 p-6 text-white shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">今日のタスクを追加</h3>
-              <button onClick={closeCreate} className="text-sm text-white/60 hover:text-white">
-                閉じる
-              </button>
-            </div>
-            <form action={handleCreate} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm text-white/80" htmlFor="dashboard-create-title">
-                  タイトル
-                </label>
-                <input
-                  id="dashboard-create-title"
-                  name="title"
-                  required
-                  className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
-                  placeholder="例: デイリースタンドアップの準備"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-white/80" htmlFor="dashboard-create-description">
-                  詳細
-                </label>
-                <textarea
-                  id="dashboard-create-description"
-                  name="description"
-                  rows={3}
-                  className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
-                  placeholder="メモや共有事項があれば記載してください"
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-sm text-white/80" htmlFor="dashboard-create-status">
-                    ステータス
-                  </label>
-                  <select
-                    id="dashboard-create-status"
-                    name="status"
-                    defaultValue="TODO"
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-white focus:border-emerald-300 focus:outline-none"
-                  >
-                    {statusOptions.map((option) => (
-                      <option key={option.value} value={option.value} className="bg-slate-900 text-white">
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <DatePicker id="dashboard-create-startDate" name="startDate" label="開始日" defaultValue={presetDate ?? todayIso} />
-                </div>
-                <div>
-                  <DatePicker id="dashboard-create-dueDate" name="dueDate" label="期限" defaultValue={presetDate ?? todayIso} />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeCreate}
-                  className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-white/40"
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="rounded-full bg-emerald-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-60"
-                >
-                  {isCreating ? "作成中..." : "追加"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateTaskModal
+        isOpen={isCreateOpen}
+        isCreating={isCreating}
+        presetDate={presetDate}
+        todayIso={todayIso}
+        statusOptions={statusOptions}
+        onClose={closeCreate}
+        onSubmit={handleCreate}
+      />
     </>
   );
 }
