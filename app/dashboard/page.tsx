@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import DashboardContent from "@/app/dashboard/dashboard-content";
 import { createTask, deleteTask, updateTask } from "@/app/dashboard/actions";
+import CurrentDateTime from "@/components/current-date-time";
 import SignOutButton from "@/components/sign-out-button";
 import { authOptions } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 rounded-3xl border border-white/10 bg-white/5 p-10 shadow-2xl">
+        <CurrentDateTime />
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Welcome back</p>
           <h1 className="mt-3 text-4xl font-semibold">
