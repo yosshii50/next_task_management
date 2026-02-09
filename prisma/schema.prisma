@@ -56,6 +56,7 @@ model User {
   tasks    Task[]
   weeklyHoliday WeeklyHoliday?
   holidays Holiday[]
+  warekiSettings WarekiSetting[]
   parent   User?    @relation("UserParent", fields: [parentId], references: [id], onDelete: SetNull)
   children User[]   @relation("UserParent")
   activationTokens ActivationToken[]
@@ -117,6 +118,20 @@ model Holiday {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+}
+
+model WarekiSetting {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  eraName   String
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate])
 }
 
 model ActivationToken {
