@@ -32,10 +32,6 @@ export default async function Home() {
       <div className="relative isolate overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-black">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-16 lg:flex-row lg:items-center lg:gap-16 lg:px-10">
           <div className="flex-1 space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-sm font-medium text-white/80">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-              新機能「Next Task」先行公開中
-            </div>
             <div className="space-y-6">
               <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
                 ビジネスを加速させる<br className="hidden sm:block" />次世代オペレーション基盤

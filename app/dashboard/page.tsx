@@ -15,7 +15,7 @@ const statusOptions = [
 ];
 
 const DEFAULT_WEEKS_TO_DISPLAY = 5;
-const MAX_WEEKS_TO_PRELOAD = 8;
+const MAX_WEEKS_TO_PRELOAD = 20;
 const MIN_WEEKS = 3;
 const DAYS_PER_WEEK = 7;
 

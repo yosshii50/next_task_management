@@ -133,9 +133,7 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
                     {badgeText && <span className={badgeClass}>{badgeText}</span>}
                   </div>
                   <div className="mt-2 space-y-1">
-                    {day.tasks.length === 0 ? (
-                      <p className="text-[10px] text-white/30">予定なし</p>
-                    ) : (
+                    {day.tasks.length > 0 &&
                       day.tasks.slice(0, 2).map((task) => (
                       <button
                         key={task.id}
@@ -152,8 +150,7 @@ export default function TaskCalendar({ days, defaultWeeks, minWeeks, maxWeeks, d
                           />
                           <p className="truncate text-xs text-white/90">{task.title}</p>
                         </button>
-                      ))
-                    )}
+                      ))}
                     {day.tasks.length > 2 && (
                       <p className="text-[10px] text-white/50">+{day.tasks.length - 2} 件</p>
                     )}
