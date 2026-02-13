@@ -5,8 +5,6 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const providers = ["Google", "Discord", "X"];
-
 export default function LoginForm() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);

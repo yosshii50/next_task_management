@@ -3,21 +3,6 @@ import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const features = [
-  {
-    title: "スマートオートメーション",
-    body: "面倒なタスクを自動化し、1日をクリエイティブな作業に集中できます。",
-  },
-  {
-    title: "チームコラボ",
-    body: "部門を越えたリアルタイム連携で、意思決定が驚くほどスムーズに。",
-  },
-  {
-    title: "安心のセキュリティ",
-    body: "国内データセンターとゼロトラスト設計で、大切な情報を守ります。",
-  },
-];
-
 export default async function Home() {
   const [totalAccounts, totalTasks] = await Promise.all([
     prisma.user.count(),
