@@ -37,7 +37,7 @@ export default async function Home() {
                 あなたのペースで、あなたらしく
               </h1>
               <p className="text-lg text-white/70 sm:text-xl">
-                個人のタスク管理に特化したシンプルなハブ。いま取り組むべきことが一目でわかり、先の予定も抜け漏れなく把握できます。
+                個人のタスク管理に特化したシンプル機能。いま取り組むべきことが一目でわかる。
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -60,7 +60,7 @@ export default async function Home() {
               className="inline-flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               <span className="text-base font-bold">X</span>
-              運営にXで連絡してメンバーになる
+              運営にXで連絡して紹介者IDを取得する
             </a>
           </div>
 
