@@ -83,7 +83,7 @@ export default function LoginForm() {
             className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white placeholder:text-white/40 focus:border-emerald-300 focus:outline-none"
           />
         </div>
-        <div className="flex items-center justify-between text-sm text-white/70">
+        <div className="flex items-center gap-2 text-sm text-white/70">
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -92,7 +92,6 @@ export default function LoginForm() {
             />
             ログイン状態を保持
           </label>
-          <span className="text-white/50">SAML対応</span>
         </div>
         {error && <p className="text-sm text-rose-300">{error}</p>}
         <button
@@ -103,20 +102,6 @@ export default function LoginForm() {
           {submitting ? "サインイン中..." : "サインイン"}
         </button>
       </form>
-      <div className="mt-6 space-y-3 text-sm text-white/60">
-        <p className="text-center text-xs uppercase tracking-[0.2em] text-white/40">or continue with</p>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          {providers.map((provider) => (
-            <button
-              key={provider}
-              type="button"
-              className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-white transition hover:border-white/30"
-            >
-              {provider}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -34,10 +34,10 @@ export default async function Home() {
           <div className="flex-1 space-y-8">
             <div className="space-y-6">
               <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-                ビジネスを加速させる<br className="hidden sm:block" />次世代オペレーション基盤
+                あなたのペースで、あなたらしく
               </h1>
               <p className="text-lg text-white/70 sm:text-xl">
-                クラウド管理からワークフロー自動化まで、成長企業が必要とする機能をワンストップで提供。データを繋ぎ、チームを繋ぎ、成果を最大化します。
+                個人のタスク管理に特化したシンプルなハブ。いま取り組むべきことが一目でわかり、先の予定も抜け漏れなく把握できます。
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -50,14 +50,18 @@ export default async function Home() {
                 <p className="text-sm text-white/60">総タスク数</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-4">
-              <button className="rounded-full bg-emerald-400 px-6 py-3 text-base font-semibold text-slate-950 transition hover:bg-emerald-300">
-                デモを予約
-              </button>
-              <button className="rounded-full border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:border-white/50">
-                資料をダウンロード
-              </button>
+            <div className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">
+              先着100名まで無料利用メンバーを募集中。自分のペースで試してみませんか？
             </div>
+            <a
+              href="https://x.com/Yosshii50"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              <span className="text-base font-bold">X</span>
+              運営にXで連絡してメンバーになる
+            </a>
           </div>
 
           <LoginForm />
@@ -65,21 +69,6 @@ export default async function Home() {
       </div>
 
       <section className="mx-auto grid w-full max-w-6xl gap-6 px-6 py-16 lg:px-10 lg:py-20">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-300">Why Next Task</p>
-          <h2 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">成果創出に必要なものを1つに</h2>
-          <p className="mt-3 text-base text-white/60">
-            データ統合・自動化・コラボレーションを1つのプラットフォームで完結。IT部門の負担を減らしながら、ビジネスサイドが自由に改善を回せる仕組みを提供します。
-          </p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title} className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white shadow-lg">
-              <h3 className="text-xl font-semibold">{feature.title}</h3>
-              <p className="mt-3 text-sm text-white/70">{feature.body}</p>
-            </div>
-          ))}
-        </div>
       </section>
     </div>
   );
