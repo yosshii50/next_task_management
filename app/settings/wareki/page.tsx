@@ -16,6 +16,9 @@ export default async function WarekiSettingsPage() {
   if (!session?.user?.id) {
     redirect("/");
   }
+  if (!session.user.isAdmin) {
+    redirect("/settings");
+  }
 
   const userId = Number(session.user.id);
 

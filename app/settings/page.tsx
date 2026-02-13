@@ -11,6 +11,7 @@ export default async function SettingsPage() {
   }
 
   const displayName = session.user?.name ?? session.user?.email ?? "メンバー";
+  const isAdmin = session.user?.isAdmin === true;
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -58,38 +59,42 @@ export default async function SettingsPage() {
               </a>
             </div>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">PDF生成</h2>
-                <p className="mt-2 text-sm text-white/70">画像とテキストを使ってA3のレイアウトを確認できます。</p>
+          {isAdmin && (
+            <>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">PDF生成</h2>
+                    <p className="mt-2 text-sm text-white/70">画像とテキストを使ってA3のレイアウトを確認できます。</p>
+                  </div>
+                  <a
+                    href="/settings/pdf"
+                    className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+                  >
+                    開く
+                  </a>
+                </div>
               </div>
-              <a
-                href="/settings/pdf"
-                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
-              >
-                開く
-              </a>
-            </div>
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-xl font-semibold">通知</h2>
-            <p className="mt-2 text-sm text-white/70">メール通知やSlack連携の設定をここに追加できます。</p>
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">和暦設定</h2>
-                <p className="mt-2 text-sm text-white/70">独自の元号と期間を登録・管理します。</p>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <h2 className="text-xl font-semibold">通知</h2>
+                <p className="mt-2 text-sm text-white/70">メール通知やSlack連携の設定をここに追加できます。</p>
               </div>
-              <a
-                href="/settings/wareki"
-                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
-              >
-                開く
-              </a>
-            </div>
-          </div>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">和暦設定</h2>
+                    <p className="mt-2 text-sm text-white/70">独自の元号と期間を登録・管理します。</p>
+                  </div>
+                  <a
+                    href="/settings/wareki"
+                    className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+                  >
+                    開く
+                  </a>
+                </div>
+              </div>
+            </>
+          )}
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="flex items-center justify-between">
               <div>

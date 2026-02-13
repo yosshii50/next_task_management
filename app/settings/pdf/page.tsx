@@ -10,6 +10,9 @@ export default async function PdfSettingsPage() {
   if (!session?.user?.id) {
     redirect("/");
   }
+  if (!session.user.isAdmin) {
+    redirect("/settings");
+  }
 
   const displayName = session.user?.name ?? session.user?.email ?? "メンバー";
 

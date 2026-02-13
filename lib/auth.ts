@@ -55,6 +55,9 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name ?? token.name;
         token.email = user.email ?? token.email;
         token.picture = user.image ?? token.picture;
+        // 権限情報をJWTに保持しておき、セッションへも伝搬させる
+        // user は DB の User レコードなので isAdmin を直接参照できる
+        token.isAdmin = (user as typeof user & { isAdmin?: boolean }).isAdmin ?? false;
       }
 
       return token;
@@ -62,18 +65,20 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin === true;
 
         const userId = Number(token.id);
         if (!Number.isNaN(userId)) {
           const freshUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { name: true, email: true, image: true },
+            select: { name: true, email: true, image: true, isAdmin: true },
           });
 
           if (freshUser) {
             session.user.name = freshUser.name ?? session.user.name;
             session.user.email = freshUser.email ?? session.user.email;
             session.user.image = freshUser.image ?? session.user.image;
+            session.user.isAdmin = freshUser.isAdmin;
           }
         }
       }
