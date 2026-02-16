@@ -54,6 +54,7 @@ export default function DashboardContent({
   });
   // SWR がまだレスポンスを返していない場合も初期データで即座に描画できるようにする。
   const dashboardData = data ?? initialData;
+  const adminSummary = dashboardData.adminSummary;
   const tasks = dashboardData.tasks;
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -244,6 +245,18 @@ export default function DashboardContent({
 
   return (
     <>
+      {adminSummary && (
+        <section className="rounded-3xl border border-white/10 bg-white/10 p-5">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-white/80">
+            <span className="rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-semibold text-emerald-200">
+              Admin Summary
+            </span>
+            <span className="font-semibold text-white">総アカウント数: {adminSummary.totalAccounts.toLocaleString()}</span>
+            <span className="font-semibold text-white">総タスク数: {adminSummary.totalTasks.toLocaleString()}</span>
+          </div>
+        </section>
+      )}
+
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>

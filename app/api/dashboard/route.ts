@@ -13,7 +13,8 @@ export async function GET() {
     return NextResponse.json({ error: "認証が必要です。" }, { status: 401 });
   }
 
-  const data = await getDashboardData(userId);
+  const includeAdminSummary = session?.user?.isAdmin === true;
+  const data = await getDashboardData(userId, includeAdminSummary);
 
   return NextResponse.json(data);
 }

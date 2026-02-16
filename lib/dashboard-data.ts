@@ -2,8 +2,8 @@ import { formatDateForInput, mapTasksToClient, sortTasksByDueDate } from "@/lib/
 import prisma from "@/lib/prisma";
 import type { DashboardData } from "@/types/dashboard";
 
-export async function getDashboardData(userId: number): Promise<DashboardData> {
-  const [tasks, weeklyHoliday, holidays] = await Promise.all([
+export async function getDashboardData(userId: number, includeAdminSummary = false): Promise<DashboardData> {
+  const [tasks, weeklyHoliday, holidays, adminSummary] = await Promise.all([
     prisma.task.findMany({
       where: { userId },
       include: {
@@ -19,6 +19,12 @@ export async function getDashboardData(userId: number): Promise<DashboardData> {
     prisma.holiday.findMany({
       where: { userId },
     }),
+    includeAdminSummary
+      ? prisma.$transaction([
+          prisma.user.count(),
+          prisma.task.count(),
+        ])
+      : Promise.resolve(null),
   ]);
 
   const sortedTasks = sortTasksByDueDate(tasks);
@@ -40,5 +46,12 @@ export async function getDashboardData(userId: number): Promise<DashboardData> {
       date: formatDateForInput(holiday.date),
       name: holiday.name,
     })),
+    adminSummary:
+      adminSummary && Array.isArray(adminSummary)
+        ? {
+            totalAccounts: adminSummary[0],
+            totalTasks: adminSummary[1],
+          }
+        : undefined,
   };
 }

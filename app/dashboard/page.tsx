@@ -34,7 +34,8 @@ export default async function DashboardPage() {
   }
 
   const displayName = session.user.name ?? session.user.email ?? "メンバー";
-  const initialData = await getDashboardData(userId);
+  const includeAdminSummary = session.user.isAdmin === true;
+  const initialDataWithAdmin = await getDashboardData(userId, includeAdminSummary);
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-16 text-white">
@@ -71,7 +72,7 @@ export default async function DashboardPage() {
 
         <DashboardContent
           statusOptions={statusOptions}
-          initialData={initialData}
+          initialData={initialDataWithAdmin}
           defaultWeeks={DEFAULT_WEEKS_TO_DISPLAY}
           minWeeks={MIN_WEEKS}
           maxWeeks={MAX_WEEKS_TO_PRELOAD}

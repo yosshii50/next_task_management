@@ -46,8 +46,14 @@ export type HolidayForClient = {
   name: string;
 };
 
+export type AdminSummary = {
+  totalAccounts: number;
+  totalTasks: number;
+};
+
 export type DashboardData = {
   tasks: TaskForClient[];
   weeklyHoliday: WeeklyHolidaySettings | null;
   holidays: HolidayForClient[];
+  adminSummary?: AdminSummary;
 };
