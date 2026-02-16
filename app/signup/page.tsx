@@ -17,6 +17,9 @@ export default function SignupPage() {
           <p className="text-base text-white/70">
             チーム情報とご担当者さまの連絡先をご入力ください。送信後、担当より1営業日以内にご連絡します。
           </p>
+          <p className="text-xs text-white/60">
+            お申し込みには利用規約への同意が必要です。事前に内容をご確認ください。
+          </p>
         </div>
         <SignupForm />
         <Link

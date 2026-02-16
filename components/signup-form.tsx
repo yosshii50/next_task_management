@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 type FormStatus = "idle" | "submitting" | "success";
@@ -9,6 +10,7 @@ export default function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [showNameInfo, setShowNameInfo] = useState(false);
   const [showEmailInfo, setShowEmailInfo] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -20,6 +22,7 @@ export default function SignupForm() {
     const name = (formData.get("name") as string | null)?.trim() ?? "";
     const email = (formData.get("email") as string | null)?.trim() ?? "";
     const referrer = (formData.get("referrer") as string | null)?.trim() ?? "";
+    const termsAccepted = formData.get("terms") === "on";
 
     if (!name) {
       setStatus("idle");
@@ -39,6 +42,12 @@ export default function SignupForm() {
       return;
     }
 
+    if (!termsAccepted) {
+      setStatus("idle");
+      setError("利用規約に同意してください。");
+      return;
+    }
+
     try {
       const response = await fetch("/api/signup", {
         method: "POST",
@@ -55,6 +64,7 @@ export default function SignupForm() {
       }
 
       formElement.reset();
+      setAgreed(false);
       setStatus("success");
     } catch (submissionError) {
       const message =
@@ -159,6 +169,24 @@ export default function SignupForm() {
       {status === "success" && (
         <p className="rounded-xl bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">メールの送信が完了しました。仮パスワードを確認し、紹介者の承認をお待ちください。</p>
       )}
+
+      <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+        <input
+          id="terms"
+          name="terms"
+          type="checkbox"
+          required
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          className="mt-1 h-5 w-5 cursor-pointer rounded border-white/40 bg-transparent text-emerald-300 focus:ring-emerald-400"
+        />
+        <label htmlFor="terms" className="text-sm leading-relaxed text-white/80">
+          <span className="font-semibold text-white">利用規約</span>に同意します。
+          <Link href="/settings/terms" className="ml-2 text-emerald-300 underline underline-offset-4" target="_blank">
+            規約を読む
+          </Link>
+        </label>
+      </div>
 
       <button
         type="submit"
