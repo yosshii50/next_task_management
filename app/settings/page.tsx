@@ -130,7 +130,21 @@ export default async function SettingsPage() {
                 <p className="mt-2 text-sm text-white/70">サービス利用条件を確認できます。重要な更新もこちらで告知します。</p>
               </div>
               <a
-                href="/settings/terms"
+                href="/settings/terms?from=settings"
+                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
+              >
+                開く
+              </a>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">セキュリティポリシー</h2>
+                <p className="mt-2 text-sm text-white/70">データ保護やアクセス管理の方針を公開しています。</p>
+              </div>
+              <a
+                href="/security-policy?from=settings"
                 className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:border-emerald-300 hover:text-emerald-300"
               >
                 開く

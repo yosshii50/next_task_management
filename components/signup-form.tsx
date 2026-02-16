@@ -182,7 +182,12 @@ export default function SignupForm() {
         />
         <label htmlFor="terms" className="text-sm leading-relaxed text-white/80">
           <span className="font-semibold text-white">利用規約</span>に同意します。
-          <Link href="/settings/terms" className="ml-2 text-emerald-300 underline underline-offset-4" target="_blank">
+          <Link
+            href="/settings/terms?from=signup"
+            className="ml-2 text-emerald-300 underline underline-offset-4"
+            target="_blank"
+            rel="noreferrer"
+          >
             規約を読む
           </Link>
         </label>

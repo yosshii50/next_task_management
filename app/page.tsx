@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import LoginForm from "@/components/login-form";
 import prisma from "@/lib/prisma";
 
@@ -54,6 +56,21 @@ export default async function Home() {
       </div>
 
       <section className="mx-auto grid w-full max-w-6xl gap-6 px-6 py-16 lg:px-10 lg:py-20">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Security</p>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                href="/security-policy"
+                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                セキュリティポリシーを見る
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
