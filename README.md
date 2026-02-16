@@ -1,44 +1,19 @@
-このリポジトリは [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) で生成した [Next.js](https://nextjs.org) プロジェクトです。
+# Next Task Management
 
-## 開発サーバーの起動手順
+Next.js (App Router) + Prisma + NextAuth で作られたタスク管理ダッシュボードです。管理者はダッシュボード先頭で総アカウント数と総タスク数を確認できます。
 
-1. 依存関係をインストール: `npm install`
-2. 以下のいずれかのコマンドで開発サーバーを開始:
+## すぐ試す
+- 依存関係: `npm install`
+- 環境変数: `.env.example` を `.env` にコピーし、ポートに合わせて `NEXTAUTH_URL=http://localhost:3001` を必ず上書き。
+- DB 初期化: `npx prisma migrate dev --name init`
+- ユーザー作成: `npx prisma studio` で `User` にメール・ハッシュ化パスワード・`isAdmin` を必要に応じ設定  
+  ハッシュ生成例: `node -e "console.log(require('bcryptjs').hashSync('your-password', 10))"`
+- 起動: `npm run dev` → http://localhost:3001
 
-```bash
-npm run dev
-# または
-yarn dev
-# または
-pnpm dev
-# または
-bun dev
-```
+## 詳細ドキュメント
+- セットアップ手順: `docs/setup.md`
+- アーキテクチャとデータモデル: `docs/architecture.md`
+- 運用・デプロイ・トラブルシュート: `docs/ops.md`
+- 開発ルール: `CONTRIBUTING.md`
 
-ブラウザで [http://localhost:3001](http://localhost:3001) を開くと、最新の画面を確認できます。
-
-## 認証セットアップ
-
-NextAuth + Prisma によるユーザーログイン機能を利用するには、次の初期設定を行ってください。
-
-1. `.env.example` をコピーして `.env` を作成し、`NEXTAUTH_SECRET` に十分に長いランダム文字列、`NEXTAUTH_URL` に `http://localhost:3001` を設定する。
-2. データベースを初期化: `npx prisma migrate dev --name init`
-3. ユーザーを登録:
-   - `npx prisma studio` を実行
-   - `User` モデルで `email` と `hashedPassword`（下記コマンドで生成）を入力
-   - `node -e "console.log(require('bcryptjs').hashSync('your-password', 10))"`
-4. `npm run dev` を実行し、[http://localhost:3001](http://localhost:3001) でログインを確認する。
-
-画面の編集は `app/page.tsx` を更新してください。保存するとホットリロードで即座に反映されます。
-
-フォントは [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) を利用しており、Vercel が提供する [Geist](https://vercel.com/font) が自動最適化されます。
-
-## 参考資料
-
-- [Next.js ドキュメント](https://nextjs.org/docs)
-- [Learn Next.js チュートリアル](https://nextjs.org/learn)
-- [Next.js GitHub リポジトリ](https://github.com/vercel/next.js)
-
-## デプロイ
-
-Next.js アプリを最も手軽にデプロイするには、Next.js の開発元 Vercel が提供する [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) をご利用ください。詳細な手順は [デプロイガイド](https://nextjs.org/docs/app/building-your-application/deploying) を参照してください。
+主要画面は `app/dashboard` と `app/tasks` にあります。UI やロジックを変える際は上記ドキュメントを参照してください。
